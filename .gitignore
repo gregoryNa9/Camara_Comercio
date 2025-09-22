@@ -1,0 +1,8 @@
+# Carpeta de datos de MySQL (no versionar nunca)
+data-mysql/
+
+# Dependencias
+node_modules/
+
+# Archivos temporales
+*.log
