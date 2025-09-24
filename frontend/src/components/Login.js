@@ -16,7 +16,7 @@ function Login({ onLogin }) {
     - Guarda el token en localStorage para futuras peticiones
     - Implementa manejo de errores (credenciales incorrectas, servidor no disponible)
   */
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3000/api';
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

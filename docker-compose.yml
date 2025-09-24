@@ -2,41 +2,27 @@ version: "3.9"
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-admintrativo
+    container_name: mysql-${DB_NAME}
     environment:
-<<<<<<< HEAD
-      MYSQL_ROOT_PASSWORD: password123
-      MYSQL_DATABASE: admintrativo_db
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: password123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
-=======
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: formulario_db
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin123
-    ports:
-      - "3308:3306"
->>>>>>> 73fe9df (Conexión con la BDD)
+      - "${MYSQL_PORT}:3306"
     volumes:
       - ./data-mysql:/var/lib/mysql
     restart: unless-stopped
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin-admintrativo
+    container_name: phpmyadmin-${DB_NAME}
     environment:
       PMA_HOST: mysql
-<<<<<<< HEAD
-      PMA_USER: admin
-      PMA_PASSWORD: password123
-=======
-      PMA_USER: root
-      PMA_PASSWORD: root
->>>>>>> 73fe9df (Conexión con la BDD)
+      PMA_USER: ${PMA_USER}
+      PMA_PASSWORD: ${PMA_PASSWORD}
     ports:
-      - "8081:80"
+      - "${PMA_PORT}:80"
     depends_on:
       - mysql
     restart: unless-stopped

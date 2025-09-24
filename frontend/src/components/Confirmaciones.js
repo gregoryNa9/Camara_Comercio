@@ -5,7 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Table, Spinner } from "react-bootstrap";
 
 function Confirmaciones({ onNavigate }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:3000/api";
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080/api";
 
   const [confirmaciones, setConfirmaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ function Confirmaciones({ onNavigate }) {
       style={{ backgroundColor: "#043474" }}
     >
       <button
-        className="btn btn-outline-light"
+        className="btn btn-outline-light d-md-none"
         onClick={() => setMenuAbierto(!menuAbierto)}
       >
         <i className="fa-solid fa-bars"></i>
@@ -68,11 +68,15 @@ function Confirmaciones({ onNavigate }) {
 			<Header />
 
 			<div className="d-flex flex-grow-1">
-				{/* Sidebar desplegable */}
-				{menuAbierto && (
+				{/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+				<div className={`d-none d-md-block`}>
 					<Menu onNavigate={onNavigate} activeItem="confirmaciones" />
+				</div>
+				{menuAbierto && (
+					<div className="d-md-none">
+						<Menu onNavigate={onNavigate} activeItem="confirmaciones" />
+					</div>
 				)}
-
 
         <main className="flex-grow-1 p-5">
           <h2 className="text-primary fw-bold mb-3">Confirmaciones</h2>
