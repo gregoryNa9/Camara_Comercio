@@ -23,7 +23,7 @@ const Invitacion = sequelize.define(
             unique: true,
         },
         qr_url: {
-            type: DataTypes.STRING(255),
+            type: DataTypes.TEXT,
         },
         imagen: {
             type: DataTypes.STRING(255), // ruta al archivo subido

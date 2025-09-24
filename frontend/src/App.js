@@ -14,10 +14,14 @@ import EditarEvento from './components/Editar-evento';
 
 function App() {
   const [currentView, setCurrentView] = useState('login'); // 'login', 'dashboard', 'invitaciones', 'eventos', 'confirmaciones'
+  const [selectedUser, setSelectedUser] = useState(null); // Usuario seleccionado para el historial
 
   // Función para manejar la navegación
-  const handleNavigation = (view) => {
+  const handleNavigation = (view, userData = null) => {
     setCurrentView(view);
+    if (userData) {
+      setSelectedUser(userData);
+    }
   };
 
   // Renderizar vista actual
@@ -54,7 +58,7 @@ function App() {
   }
 
   if (currentView === 'historial') {  
-    return <Historial onNavigate={handleNavigation} />;
+    return <Historial onNavigate={handleNavigation} selectedUser={selectedUser} />;
   }
 
   if (currentView === 'new-user') {

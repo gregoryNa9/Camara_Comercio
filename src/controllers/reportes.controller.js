@@ -170,14 +170,23 @@ exports.getTopUsuarios = async (req, res) => {
                     where: { estado_evento: 'Activo' },
                     attributes: []
                 }],
-                attributes: []
+                attributes: [],
+                required: false // LEFT JOIN para incluir usuarios sin invitaciones
             }],
             group: ['Usuario.id_usuario'],
             order: [[sequelize.fn('COUNT', sequelize.col('Invitaciones.id_invitacion')), 'DESC']],
             limit: 10
         });
 
-        res.json(topUsuarios);
+        // Mapear los resultados para asegurar que totalInvitaciones sea un número
+        const topUsuariosMapeados = topUsuarios.map(usuario => ({
+            id_usuario: usuario.id_usuario,
+            nombre: usuario.nombre,
+            empresa: usuario.empresa,
+            totalInvitaciones: parseInt(usuario.dataValues.totalInvitaciones) || 0
+        }));
+
+        res.json(topUsuariosMapeados);
 
     } catch (error) {
         console.error("Error al obtener top usuarios:", error);
@@ -207,13 +216,22 @@ exports.getAll = async (req, res) => {
                     where: { estado_evento: 'Activo' },
                     attributes: []
                 }],
-                attributes: []
+                attributes: [],
+                required: false // LEFT JOIN para incluir usuarios sin invitaciones
             }],
             group: ['Usuario.id_usuario'],
             order: [[sequelize.fn('COUNT', sequelize.col('Invitaciones.id_invitacion')), 'DESC']]
         });
 
-        res.json(reportes);
+        // Mapear los resultados para asegurar que eventosAsistidos sea un número
+        const reportesMapeados = reportes.map(reporte => ({
+            id_usuario: reporte.id_usuario,
+            nombre: reporte.nombre,
+            empresa: reporte.empresa,
+            eventosAsistidos: parseInt(reporte.dataValues.eventosAsistidos) || 0
+        }));
+
+        res.json(reportesMapeados);
 
     } catch (error) {
         console.error("Error al obtener reportes:", error);

@@ -7,7 +7,7 @@ exports.getAll = async (req, res) => {
         // 🔹 Mapear campos de la base de datos al formato que espera el frontend
         const eventosMapeados = data.map(evento => ({
             id: evento.id_evento,
-            nombre: evento.nombre_evento,
+            nombreEvento: evento.nombre_evento,
             categoria: evento.categoria,
             temaEvento: evento.tema_evento,
             temaConferencia: evento.tema_conferencia,
@@ -35,7 +35,7 @@ exports.getById = async (req, res) => {
         // 🔹 Mapear campos de la base de datos al formato que espera el frontend
         const eventoMapeado = {
             id: evento.id_evento,
-            nombre: evento.nombre_evento,
+            nombreEvento: evento.nombre_evento,
             categoria: evento.categoria,
             temaEvento: evento.tema_evento,
             temaConferencia: evento.tema_conferencia,
@@ -58,7 +58,7 @@ exports.create = async (req, res) => {
     try {
         // 🔹 Mapear campos del frontend al formato de la base de datos
         const datosEvento = {
-            nombre_evento: req.body.nombre,
+            nombre_evento: req.body.nombreEvento,
             categoria: req.body.categoria,
             tema_evento: req.body.temaEvento,
             tema_conferencia: req.body.temaConferencia,
@@ -83,7 +83,7 @@ exports.update = async (req, res) => {
     try {
         // 🔹 Mapear campos del frontend al formato de la base de datos
         const datosEvento = {
-            nombre_evento: req.body.nombre,
+            nombre_evento: req.body.nombreEvento,
             categoria: req.body.categoria,
             tema_evento: req.body.temaEvento,
             tema_conferencia: req.body.temaConferencia,
