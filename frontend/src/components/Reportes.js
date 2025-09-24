@@ -246,7 +246,7 @@ function Reportes({ onNavigate }) {
                         <td className="border-0">{item.empresa}</td>
                         <td className="border-0">{item.eventosAsistidos}</td>
                         <td className="border-0">
-                          <button className="btn btn-link btn-ver-mas" onClick={() => onNavigate('historial')}>
+                          <button className="btn btn-link btn-ver-mas" onClick={() => onNavigate('historial', item)}>
                             <i className="fa-solid fa-eye me-1"></i>Historial
                           </button>
                         </td>

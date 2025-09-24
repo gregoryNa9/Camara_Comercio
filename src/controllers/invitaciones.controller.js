@@ -13,8 +13,44 @@ const sendWhatsApp = require("../utils/whatsappApi");
  */
 exports.getAll = async (req, res) => {
     try {
-        const data = await Invitacion.findAll();
-        res.json(data);
+        const data = await Invitacion.findAll({
+            include: [
+                {
+                    model: Usuario,
+                    as: 'Usuario',
+                    attributes: ['id_usuario', 'cedula', 'nombre', 'correo', 'telefono', 'empresa', 'cargo']
+                },
+                {
+                    model: Evento,
+                    as: 'Evento',
+                    attributes: ['id_evento', 'nombre_evento', 'categoria', 'fecha', 'lugar']
+                }
+            ]
+        });
+        
+        // Mapear los datos para el frontend
+        const invitacionesMapeadas = data.map(invitacion => ({
+            id_invitacion: invitacion.id_invitacion,
+            cedula: invitacion.Usuario?.cedula || '',
+            nombre: invitacion.Usuario?.nombre || '',
+            correo: invitacion.Usuario?.correo || '',
+            telefono: invitacion.Usuario?.telefono || '',
+            empresa: invitacion.Usuario?.empresa || '',
+            cargo: invitacion.Usuario?.cargo || '',
+            evento: invitacion.Evento?.nombre_evento || '',
+            evento_id: invitacion.Evento?.id_evento || '',
+            categoria: invitacion.Evento?.categoria || '',
+            fecha_evento: invitacion.Evento?.fecha || '',
+            lugar: invitacion.Evento?.lugar || '',
+            codigo_unico: invitacion.codigo_unico,
+            qr_url: invitacion.qr_url,
+            imagen: invitacion.imagen,
+            fecha_envio: invitacion.fecha_envio,
+            id_estado: invitacion.id_estado,
+            id_metodo_envio: invitacion.id_metodo_envio
+        }));
+        
+        res.json(invitacionesMapeadas);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error al obtener invitaciones", error: error.message });
@@ -73,7 +109,7 @@ exports.create = async (req, res) => {
             where: { id_usuario: usuario.id_usuario, id_evento },
         });
         if (existe) {
-            return res.status(400).json({ message: "Ya existe invitación para este evento" });
+            return res.status(400).json({ message: "Este usuario ya tiene una invitación para este evento" });
         }
 
         // Generar código alfanumérico:
@@ -92,9 +128,8 @@ exports.create = async (req, res) => {
 
         const codigo_unico = `${pref}${last3Ced}${primeraLetraNombre}${primeraLetraApellido}`;
 
-        // Generar QR con la info requerida (según tu requerimiento: cedula + id_evento)
-        const qrText = `${cedula}-${id_evento}`;
-        const { qrDataURL, filePath: qrFilePath } = await generateQR(qrText, true);
+        // Generar QR con el código alfanumérico único
+        const { qrDataURL, filePath: qrFilePath } = await generateQR(codigo_unico, true);
         // qrDataURL => base64 data url usable en emails; qrFilePath => path en fs si tu util lo crea
 
         // Si se subió una imagen, guardamos la ruta relativa
@@ -104,12 +139,12 @@ exports.create = async (req, res) => {
             imagenRuta = file.filename || file.path; // ajusta según tu configuración de multer
         }
 
-        // Guardar invitación
+        // Guardar invitación - solo guardamos la ruta del archivo QR, no el base64 completo
         const invitacion = await Invitacion.create({
             id_usuario: usuario.id_usuario,
             id_evento,
             codigo_unico,
-            qr_url: qrDataURL,
+            qr_url: qrFilePath, // Guardamos solo la ruta del archivo, no el base64
             imagen: imagenRuta,
             fecha_envio: new Date(),
             id_estado,
@@ -156,6 +191,59 @@ exports.update = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(400).json({ message: "Error al actualizar invitación", error: error.message });
+    }
+};
+
+/**
+ * GET /api/invitaciones/usuario/:id
+ * Obtener invitaciones de un usuario específico
+ */
+exports.getByUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const data = await Invitacion.findAll({
+            where: { id_usuario: id },
+            include: [
+                {
+                    model: Usuario,
+                    as: 'Usuario',
+                    attributes: ['id_usuario', 'cedula', 'nombre', 'correo', 'telefono', 'empresa', 'cargo']
+                },
+                {
+                    model: Evento,
+                    as: 'Evento',
+                    attributes: ['id_evento', 'nombre_evento', 'categoria', 'fecha', 'lugar']
+                }
+            ]
+        });
+        
+        // Mapear los datos para el frontend
+        const invitacionesMapeadas = data.map(invitacion => ({
+            id_invitacion: invitacion.id_invitacion,
+            cedula: invitacion.Usuario?.cedula || '',
+            nombre: invitacion.Usuario?.nombre || '',
+            correo: invitacion.Usuario?.correo || '',
+            telefono: invitacion.Usuario?.telefono || '',
+            empresa: invitacion.Usuario?.empresa || '',
+            cargo: invitacion.Usuario?.cargo || '',
+            evento: invitacion.Evento?.nombre_evento || '',
+            evento_id: invitacion.Evento?.id_evento || '',
+            categoria: invitacion.Evento?.categoria || '',
+            fecha_evento: invitacion.Evento?.fecha || '',
+            lugar: invitacion.Evento?.lugar || '',
+            codigo_unico: invitacion.codigo_unico,
+            qr_url: invitacion.qr_url,
+            imagen: invitacion.imagen,
+            fecha_envio: invitacion.fecha_envio,
+            id_estado: invitacion.id_estado,
+            id_metodo_envio: invitacion.id_metodo_envio
+        }));
+        
+        res.json(invitacionesMapeadas);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error al obtener invitaciones del usuario", error: error.message });
     }
 };
 

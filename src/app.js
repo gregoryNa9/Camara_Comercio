@@ -29,6 +29,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🔹 Servir archivos estáticos desde el directorio temp (para códigos QR)
+app.use('/temp', express.static('src/temp'));
+
 // 🔹 Prefijo para las rutas principales (buena práctica)
 app.use("/api/auth", authRoutes); // 👈 Rutas de autenticación
 app.use("/api/usuarios", usuariosRoutes);

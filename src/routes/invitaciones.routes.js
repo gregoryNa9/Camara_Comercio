@@ -22,6 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.get("/", controller.getAll);
+router.get("/usuario/:id", controller.getByUsuario); // Obtener invitaciones por usuario
 // Para crear: usamos upload.single('imagen') (el campo en el form debe llamarse 'imagen')
 router.post("/", upload.single("imagen"), controller.create);
 router.put("/:id", controller.update);

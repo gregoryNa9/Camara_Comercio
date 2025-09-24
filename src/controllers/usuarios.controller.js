@@ -45,3 +45,17 @@ exports.delete = async (req, res) => {
         res.status(400).json({ message: "Error al eliminar usuario", error: error.message });
     }
 };
+
+// Buscar usuario por cédula
+exports.getByCedula = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        const usuario = await Usuario.findOne({ where: { cedula } });
+        if (!usuario) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        res.json(usuario);
+    } catch (error) {
+        res.status(500).json({ message: "Error al buscar usuario", error: error.message });
+    }
+};
