@@ -5,7 +5,7 @@ import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Invitaciones({ onNavigate }) {
-	const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:3000/api";
+	const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080/api";
 
 	// Estados
 	const [filtros, setFiltros] = useState({ cedula: "", evento: "", apellidos: "" });
@@ -22,8 +22,8 @@ function Invitaciones({ onNavigate }) {
 	// Modales
 	const [invitacionSeleccionada, setInvitacionSeleccionada] = useState(null);
 	const [showViewModal, setShowViewModal] = useState(false);
-	const [setShowEditModal] = useState(false);
-	const [setShowDeleteModal] = useState(false);
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
 	// Cargar invitaciones
 	const fetchInvitaciones = useCallback(async () => {
@@ -136,7 +136,7 @@ function Invitaciones({ onNavigate }) {
 			style={{ backgroundColor: "#043474" }}
 		>
 			<button
-				className="btn btn-outline-light"
+				className="btn btn-outline-light d-md-none"
 				onClick={() => setMenuAbierto(!menuAbierto)}
 			>
 				<i className="fa-solid fa-bars"></i>
@@ -151,9 +151,14 @@ function Invitaciones({ onNavigate }) {
 			<Header />
 
 			<div className="d-flex flex-grow-1">
-				{/* Sidebar desplegable */}
-				{menuAbierto && (
+				{/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+				<div className={`d-none d-md-block`}>
 					<Menu onNavigate={onNavigate} activeItem="invitaciones" />
+				</div>
+				{menuAbierto && (
+					<div className="d-md-none">
+						<Menu onNavigate={onNavigate} activeItem="invitaciones" />
+					</div>
 				)}
 
 				{/* Contenido principal */}
@@ -352,6 +357,41 @@ function Invitaciones({ onNavigate }) {
 						</Modal.Footer>
 					</Modal>
 
+					{/* Modal de Edición */}
+					<Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+						<Modal.Header closeButton>
+							<Modal.Title>Editar Invitación</Modal.Title>
+						</Modal.Header>
+						<Modal.Body>
+							<p>Funcionalidad de edición en desarrollo...</p>
+						</Modal.Body>
+						<Modal.Footer>
+							<Button variant="secondary" onClick={() => setShowEditModal(false)}>
+								Cancelar
+							</Button>
+							<Button variant="primary">
+								Guardar Cambios
+							</Button>
+						</Modal.Footer>
+					</Modal>
+
+					{/* Modal de Eliminación */}
+					<Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+						<Modal.Header closeButton>
+							<Modal.Title>Confirmar Eliminación</Modal.Title>
+						</Modal.Header>
+						<Modal.Body>
+							<p>¿Estás seguro de que deseas eliminar esta invitación?</p>
+						</Modal.Body>
+						<Modal.Footer>
+							<Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+								Cancelar
+							</Button>
+							<Button variant="danger">
+								Eliminar
+							</Button>
+						</Modal.Footer>
+					</Modal>
 
 				</main>
 			</div>

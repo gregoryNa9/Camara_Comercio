@@ -3,9 +3,10 @@ import './style.css';
 import Menu from './Menu';
 
 function Historial({ onNavigate }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3000/api';
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
 
   // Estados
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [filtros, setFiltros] = useState({
     tipoEvento: '',
     fechaEvento: ''
@@ -70,13 +71,40 @@ function Historial({ onNavigate }) {
     setFiltros({ tipoEvento: '', fechaEvento: '' });
   };
 
-  return (
-    <div className="d-flex min-vh-100 bg-light">
-      {/* Sidebar */}
-      <Menu onNavigate={onNavigate} activeItem="reportes" />
+  // Header con logo y menú, color #043474
+  const Header = () => (
+    <header
+      className="d-flex justify-content-between align-items-center p-3 text-white"
+      style={{ backgroundColor: "#043474" }}
+    >
+      <button
+        className="btn btn-outline-light d-md-none"
+        onClick={() => setMenuAbierto(!menuAbierto)}
+      >
+        <i className="fa-solid fa-bars"></i>
+      </button>
+      <img src="/logo.jpg" alt="Logo" style={{ height: "50px" }} />
+    </header>
+  );
 
-      {/* Contenido principal */}
-      <main className="flex-grow-1 p-5">
+  return (
+    <div className="d-flex flex-column min-vh-100 bg-light">
+      {/* Header */}
+      <Header />
+
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
+          <Menu onNavigate={onNavigate} activeItem="reportes" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="reportes" />
+          </div>
+        )}
+
+        {/* Contenido principal */}
+        <main className="flex-grow-1 p-5">
         <h2 className="text-primary fw-bold mb-3">Historial</h2>
         <h5 className="text-muted mb-4">Historial de Ana Lucia Rodriguez Espinoza</h5>
 
@@ -163,6 +191,7 @@ function Historial({ onNavigate }) {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

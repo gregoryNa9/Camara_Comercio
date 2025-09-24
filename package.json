@@ -9,16 +9,7 @@
   "author": "",
   "license": "ISC",
   "keywords": [],
-<<<<<<< HEAD
   "description": "",
-  "dependencies": {
-    "axios": "^1.11.0",
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.0.0",
-    "express": "^5.1.0",
-    "mysql2": "^3.14.4",
-=======
   "dependencies": {
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
@@ -26,8 +17,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.15.0",
->>>>>>> 73fe9df (Conexión con la BDD)
     "nodemailer": "^7.0.6",
     "qrcode": "^1.5.4",
     "react-router-dom": "^7.6.3",
@@ -37,9 +29,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-<<<<<<< HEAD
-  }
-=======
   },
   "repository": {
     "type": "git",
@@ -48,7 +37,5 @@
   "bugs": {
     "url": "https://github.com/gregoryNa9/Practicas_Admin/issues"
   },
-  "homepage": "https://github.com/gregoryNa9/Practicas_Admin#readme",
-  "description": ""
->>>>>>> 73fe9df (Conexión con la BDD)
+  "homepage": "https://github.com/gregoryNa9/Practicas_Admin#readme"
 }

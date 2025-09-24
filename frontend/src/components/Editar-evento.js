@@ -3,6 +3,7 @@ import './style.css';
 import Menu from './Menu';
 
 function EditarEvento({ onNavigate }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [formData, setFormData] = useState({
     nombreEvento: '',
     categoria: '',
@@ -43,13 +44,40 @@ function EditarEvento({ onNavigate }) {
     });
   };
 
-  return (
-    <div className="d-flex min-vh-100 evento-form-container">
-      {/* Sidebar */}
-      <Menu onNavigate={onNavigate} activeItem="eventos" />
+  // Header con logo y menú, color #043474
+  const Header = () => (
+    <header
+      className="d-flex justify-content-between align-items-center p-3 text-white"
+      style={{ backgroundColor: "#043474" }}
+    >
+      <button
+        className="btn btn-outline-light d-md-none"
+        onClick={() => setMenuAbierto(!menuAbierto)}
+      >
+        <i className="fa-solid fa-bars"></i>
+      </button>
+      <img src="/logo.jpg" alt="Logo" style={{ height: "50px" }} />
+    </header>
+  );
 
-      {/* Main Content */}
-      <main className="flex-grow-1 p-5">
+  return (
+    <div className="d-flex flex-column min-vh-100 evento-form-container">
+      {/* Header */}
+      <Header />
+
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
+          <Menu onNavigate={onNavigate} activeItem="eventos" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="eventos" />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-grow-1 p-5">
         {/* Header */}
         <div className="mb-4">
           <h1 className="page-title mb-2">Editar Evento</h1>
@@ -124,6 +152,7 @@ function EditarEvento({ onNavigate }) {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

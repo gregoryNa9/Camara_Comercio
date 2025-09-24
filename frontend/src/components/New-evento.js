@@ -3,6 +3,7 @@ import './style.css';
 import Menu from './Menu';
 
 function NewEvento({ onNavigate }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [formData, setFormData] = useState({
     nombreEvento: '',
     categoria: '',
@@ -73,11 +74,39 @@ function NewEvento({ onNavigate }) {
     setMensaje(null);
   }, []);
 
-  return (
-    <div className="d-flex min-vh-100 evento-form-container">
-      <Menu onNavigate={onNavigate} activeItem="eventos" />
+  // Header con logo y menú, color #043474
+  const Header = () => (
+    <header
+      className="d-flex justify-content-between align-items-center p-3 text-white"
+      style={{ backgroundColor: "#043474" }}
+    >
+      <button
+        className="btn btn-outline-light d-md-none"
+        onClick={() => setMenuAbierto(!menuAbierto)}
+      >
+        <i className="fa-solid fa-bars"></i>
+      </button>
+      <img src="/logo.jpg" alt="Logo" style={{ height: "50px" }} />
+    </header>
+  );
 
-      <main className="flex-grow-1 p-5">
+  return (
+    <div className="d-flex flex-column min-vh-100 evento-form-container">
+      {/* Header */}
+      <Header />
+
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
+          <Menu onNavigate={onNavigate} activeItem="eventos" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="eventos" />
+          </div>
+        )}
+
+        <main className="flex-grow-1 p-5">
         <div className="mb-4">
           <h1 className="page-title mb-2">Nuevo Evento</h1>
           <button className="evento-back-button" onClick={() => onNavigate('eventos')}>
@@ -293,6 +322,7 @@ function NewEvento({ onNavigate }) {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

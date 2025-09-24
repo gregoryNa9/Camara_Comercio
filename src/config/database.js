@@ -1,19 +1,17 @@
 const { Sequelize } = require("sequelize");
+require('dotenv').config();
 
-<<<<<<< HEAD
-const sequelize = new Sequelize("mecanica_db", "admin", "password123", {
-    host: "localhost",
-    dialect: "mysql",
-});
+// 🔹 Configuración usando variables de entorno
+const sequelize = new Sequelize(
+    process.env.MYSQL_DATABASE || "administrativo_db", // Tu base de datos por defecto
+    process.env.MYSQL_USER || "admin",
+    process.env.MYSQL_PASSWORD || "password123",
+    {
+        host: process.env.MYSQL_HOST || "localhost",
+        dialect: "mysql",
+        port: process.env.MYSQL_PORT || 3306,
+        logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    }
+);
 
 module.exports = sequelize;
-=======
-const sequelize = new Sequelize("formulario_db", "admin", "admin123", {
-    host: "127.0.0.1",
-    dialect: "mysql",
-    port: 3308,
-    logging: false,
-});
-
-module.exports = sequelize;
->>>>>>> 73fe9df (Conexión con la BDD)

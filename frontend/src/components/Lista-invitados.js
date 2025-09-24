@@ -3,6 +3,7 @@ import './style.css';
 import Menu from './Menu';
 
 function ListaInvitados({ onNavigate }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   // Estado para los usuarios
   const [usuarios, setUsuarios] = useState([
     { nombre: 'JUAN ALAN PEREZ ZAMBRANO', celular: '0999999999', correo: 'juanperez@gmail.com', empresa: 'PRONACA', imagen: null, metodos: { whatsapp: false, correo: false }, invitar: true },
@@ -27,13 +28,40 @@ function ListaInvitados({ onNavigate }) {
     setUsuarios(nuevosUsuarios);
   };
 
-  return (
-    <div className="d-flex min-vh-100 lista-invitados-container">
-      {/* Sidebar */}
-      <Menu onNavigate={onNavigate} activeItem="eventos" />
+  // Header con logo y menú, color #043474
+  const Header = () => (
+    <header
+      className="d-flex justify-content-between align-items-center p-3 text-white"
+      style={{ backgroundColor: "#043474" }}
+    >
+      <button
+        className="btn btn-outline-light d-md-none"
+        onClick={() => setMenuAbierto(!menuAbierto)}
+      >
+        <i className="fa-solid fa-bars"></i>
+      </button>
+      <img src="/logo.jpg" alt="Logo" style={{ height: "50px" }} />
+    </header>
+  );
 
-      {/* Main Content */}
-      <main className="flex-grow-1 p-5">
+  return (
+    <div className="d-flex flex-column min-vh-100 lista-invitados-container">
+      {/* Header */}
+      <Header />
+
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
+          <Menu onNavigate={onNavigate} activeItem="eventos" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="eventos" />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-grow-1 p-5">
         <div className="mb-2">
           <button className="lista-invitados-back-button" onClick={() => onNavigate('eventos')}>
             <i className="fa-solid fa-arrow-left me-2"></i>Volver
@@ -136,6 +164,7 @@ function ListaInvitados({ onNavigate }) {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

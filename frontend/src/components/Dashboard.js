@@ -76,7 +76,7 @@ function Dashboard({ onNavigate }) {
       style={{ backgroundColor: "#043474" }}
     >
       <button
-        className="btn btn-outline-light"
+        className="btn btn-outline-light d-md-none"
         onClick={() => setMenuAbierto(!menuAbierto)}
       >
         <i className="fa-solid fa-bars"></i>
@@ -91,8 +91,15 @@ function Dashboard({ onNavigate }) {
       <Header />
 
       <div className="d-flex flex-grow-1">
-        {/* Sidebar */}
-        {menuAbierto && <Menu onNavigate={onNavigate} activeItem="dashboard" />}
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
+          <Menu onNavigate={onNavigate} activeItem="dashboard" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="dashboard" />
+          </div>
+        )}
 
         {/* Main Content */}
         <main className="flex-grow-1 p-5">
