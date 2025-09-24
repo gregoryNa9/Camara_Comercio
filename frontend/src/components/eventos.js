@@ -4,7 +4,7 @@ import Menu from './Menu';
 import { Modal, Button } from 'react-bootstrap';
 
 function Eventos({ onNavigate }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3000/api';
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
 
   // Estado para abrir/cerrar menú lateral
   const [menuAbierto, setMenuAbierto] = useState(true);
@@ -35,7 +35,7 @@ function Eventos({ onNavigate }) {
       style={{ backgroundColor: "#043474" }}
     >
       <button
-        className="btn btn-outline-light"
+        className="btn btn-outline-light d-md-none"
         onClick={() => setMenuAbierto(!menuAbierto)}
       >
         <i className="fa-solid fa-bars"></i>
@@ -138,9 +138,14 @@ function Eventos({ onNavigate }) {
       <Header />
 
       <div className="d-flex flex-grow-1">
-        {/* Menú lateral condicional */}
-        {menuAbierto && (
+        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+        <div className={`d-none d-md-block`}>
           <Menu onNavigate={onNavigate} activeItem="eventos" />
+        </div>
+        {menuAbierto && (
+          <div className="d-md-none">
+            <Menu onNavigate={onNavigate} activeItem="eventos" />
+          </div>
         )}
 
         {/* Contenido principal */}

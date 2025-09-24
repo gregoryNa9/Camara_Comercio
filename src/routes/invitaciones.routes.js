@@ -1,11 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/invitaciones.controller");
-<<<<<<< HEAD
-
-router.get("/", controller.getAll);
-router.post("/", controller.create);
-=======
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -29,7 +24,6 @@ const upload = multer({ storage });
 router.get("/", controller.getAll);
 // Para crear: usamos upload.single('imagen') (el campo en el form debe llamarse 'imagen')
 router.post("/", upload.single("imagen"), controller.create);
->>>>>>> 73fe9df (Conexión con la BDD)
 router.put("/:id", controller.update);
 router.delete("/:id", controller.delete);
 

@@ -1,20 +1,9 @@
-<<<<<<< HEAD
-// controllers/invitaciones.controller.js
-
-const { v4: uuidv4 } = require("uuid");
-const Invitacion = require("../models/Invitacion");
-const Usuario = require("../models/Usuario");
-const generateQR = require("../utils/generateQR");
-const sendEmail = require("../utils/sendEmail");
-const sendWhatsApp = require("../utils/whatsappApi");
-
-=======
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 const fs = require("fs");
 const Invitacion = require("../models/Invitacion");
 const Usuario = require("../models/Usuario");
-const Evento = require("../models/Evento");
+const Evento = require("../models/Eventos");
 const generateQR = require("../utils/generateQR"); // debe devolver { qrDataURL, filePath } o similar
 const sendEmail = require("../utils/sendEmail");
 const sendWhatsApp = require("../utils/whatsappApi");
@@ -22,39 +11,16 @@ const sendWhatsApp = require("../utils/whatsappApi");
 /**
  * GET /api/invitaciones
  */
->>>>>>> 73fe9df (Conexión con la BDD)
 exports.getAll = async (req, res) => {
     try {
         const data = await Invitacion.findAll();
         res.json(data);
     } catch (error) {
-<<<<<<< HEAD
-=======
         console.error(error);
->>>>>>> 73fe9df (Conexión con la BDD)
-        res.status(500).json({ message: "Error al obtener invitaciones", error });
+        res.status(500).json({ message: "Error al obtener invitaciones", error: error.message });
     }
 };
 
-<<<<<<< HEAD
-exports.create = async (req, res) => {
-    try {
-        const { nombre, correo, telefono, id_evento, id_metodo_envio, id_estado } = req.body;
-
-        // Crear o buscar usuario
-        let usuario = await Usuario.findOne({ where: { correo } });
-        if (!usuario) {
-            usuario = await Usuario.create({ nombre, correo, telefono });
-        }
-
-        // Validar invitación duplicada
-        const existe = await Invitacion.findOne({ where: { id_usuario: usuario.id_usuario, id_evento } });
-        if (existe) return res.status(400).json({ message: "Ya existe invitación para este evento" });
-
-        // Generar código único y QR
-        const codigo_unico = uuidv4();
-        const { qrDataURL, filePath } = await generateQR(codigo_unico, true);
-=======
 /**
  * POST /api/invitaciones
  * - recibe multipart/form-data:
@@ -137,7 +103,6 @@ exports.create = async (req, res) => {
             // ya con multer el archivo está en uploads/ por ejemplo
             imagenRuta = file.filename || file.path; // ajusta según tu configuración de multer
         }
->>>>>>> 73fe9df (Conexión con la BDD)
 
         // Guardar invitación
         const invitacion = await Invitacion.create({
@@ -145,29 +110,6 @@ exports.create = async (req, res) => {
             id_evento,
             codigo_unico,
             qr_url: qrDataURL,
-<<<<<<< HEAD
-            fecha_envio: new Date(),
-            id_estado,
-            id_metodo_envio
-        });
-
-        // Enviar correo dinámico
-        await sendEmail(usuario.correo, "Tu invitación al evento", `<p>Hola ${usuario.nombre}</p>
-        <p>Tu código: <b>${codigo_unico}</b></p>
-        <img src="${qrDataURL}" alt="QR">`, filePath);
-
-        // Enviar WhatsApp dinámico
-        await sendWhatsApp(usuario.telefono, `Hola ${usuario.nombre}, tu código de acceso es: ${codigo_unico}`, qrDataURL);
-
-        res.status(201).json({ message: "Invitación enviada correctamente", invitacion });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error al crear invitación", error: error.message });
-    }
-};
-
-=======
             imagen: imagenRuta,
             fecha_envio: new Date(),
             id_estado,
@@ -175,7 +117,7 @@ exports.create = async (req, res) => {
         });
 
         // Preparar mensajes dinámicos
-            const emailBody = `
+        const emailBody = `
         <p>Hola ${parts[0] || usuario.nombre},</p>
         <p>Has sido invitado al evento <b>${evento.nombre_evento}</b>.</p>
         <p>Tu código: <b>${codigo_unico}</b></p>
@@ -207,35 +149,25 @@ exports.create = async (req, res) => {
 /**
  * PUT /api/invitaciones/:id
  */
->>>>>>> 73fe9df (Conexión con la BDD)
 exports.update = async (req, res) => {
     try {
         await Invitacion.update(req.body, { where: { id_invitacion: req.params.id } });
         res.json({ message: "Invitación actualizada" });
     } catch (error) {
-<<<<<<< HEAD
-=======
         console.error(error);
->>>>>>> 73fe9df (Conexión con la BDD)
-        res.status(400).json({ message: "Error al actualizar invitación", error });
+        res.status(400).json({ message: "Error al actualizar invitación", error: error.message });
     }
 };
 
-<<<<<<< HEAD
-=======
 /**
  * DELETE /api/invitaciones/:id
  */
->>>>>>> 73fe9df (Conexión con la BDD)
 exports.delete = async (req, res) => {
     try {
         await Invitacion.destroy({ where: { id_invitacion: req.params.id } });
         res.json({ message: "Invitación eliminada" });
     } catch (error) {
-<<<<<<< HEAD
-=======
         console.error(error);
->>>>>>> 73fe9df (Conexión con la BDD)
-        res.status(400).json({ message: "Error al eliminar invitación", error });
+        res.status(400).json({ message: "Error al eliminar invitación", error: error.message });
     }
 };
