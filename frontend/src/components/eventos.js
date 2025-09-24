@@ -105,10 +105,25 @@ function Eventos({ onNavigate }) {
 
   const guardarCambios = async () => {
     try {
+      // Mapear los campos del frontend al formato esperado por el backend
+      const datosEvento = {
+        nombreEvento: eventoSeleccionado.nombreEvento,
+        categoria: eventoSeleccionado.categoria,
+        temaEvento: eventoSeleccionado.temaEvento,
+        temaConferencia: eventoSeleccionado.temaConferencia,
+        fecha: eventoSeleccionado.fecha,
+        lugar: eventoSeleccionado.lugar,
+        horaInicio: eventoSeleccionado.horaInicio,
+        horaFin: eventoSeleccionado.horaFin,
+        codigoVestimenta: eventoSeleccionado.codigoVestimenta,
+        organizadoPor: eventoSeleccionado.organizadoPor,
+        estado: eventoSeleccionado.estado
+      };
+
       const res = await fetch(`${API_BASE}/eventos/${eventoSeleccionado.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventoSeleccionado),
+        body: JSON.stringify(datosEvento),
       });
       if (!res.ok) throw new Error("Error al actualizar evento");
       await cargarEventos();
@@ -239,7 +254,7 @@ function Eventos({ onNavigate }) {
                     )}
                     {!loading && eventos.map(evento => (
                       <tr key={evento.id}>
-                        <td className="border-0">{evento.nombre}</td>
+                        <td className="border-0">{evento.nombreEvento}</td>
                         <td className="border-0">{evento.categoria}</td>
                         <td className="border-0">
                           <span className={getEstadoBadgeClass(evento.estado)}>{evento.estado}</span>
@@ -276,7 +291,7 @@ function Eventos({ onNavigate }) {
         <Modal.Body>
           {eventoSeleccionado && (
             <div>
-              <p><strong>Nombre:</strong> {eventoSeleccionado.nombre}</p>
+              <p><strong>Nombre:</strong> {eventoSeleccionado.nombreEvento}</p>
               <p><strong>Categoría:</strong> {eventoSeleccionado.categoria}</p>
               <p><strong>Tema del Evento:</strong> {eventoSeleccionado.temaEvento}</p>
               <p><strong>Tema de la Conferencia:</strong> {eventoSeleccionado.temaConferencia}</p>
@@ -309,8 +324,8 @@ function Eventos({ onNavigate }) {
                   <input
                     type="text"
                     className="form-control"
-                    value={eventoSeleccionado.nombre}
-                    onChange={(e) => setEventoSeleccionado({ ...eventoSeleccionado, nombre: e.target.value })}
+                    value={eventoSeleccionado.nombreEvento}
+                    onChange={(e) => setEventoSeleccionado({ ...eventoSeleccionado, nombreEvento: e.target.value })}
                   />
                 </div>
                 <div className="col">
@@ -440,7 +455,7 @@ function Eventos({ onNavigate }) {
         </Modal.Header>
         <Modal.Body>
           {eventoSeleccionado && (
-            <p>¿Seguro que deseas eliminar el evento <strong>{eventoSeleccionado.nombre}</strong>?</p>
+            <p>¿Seguro que deseas eliminar el evento <strong>{eventoSeleccionado.nombreEvento}</strong>?</p>
           )}
         </Modal.Body>
         <Modal.Footer>

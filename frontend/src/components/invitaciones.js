@@ -15,6 +15,7 @@ function Invitaciones({ onNavigate }) {
 	const [nuevaImagen, setNuevaImagen] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [usuarioEncontrado, setUsuarioEncontrado] = useState(null);
 
 	// Estado menú
 	const [menuAbierto, setMenuAbierto] = useState(false);
@@ -69,14 +70,22 @@ function Invitaciones({ onNavigate }) {
 			const res = await fetch(`${API_BASE}/usuarios/cedula/${cedula}`);
 			if (res.ok) {
 				const usuario = await res.json();
+				setUsuarioEncontrado(usuario);
+				// Extraer apellido del nombre completo
+				const nombreCompleto = usuario.nombre || "";
+				const partes = nombreCompleto.split(" ");
+				const apellido = partes.length > 1 ? partes[partes.length - 1] : "";
+				
 				setFiltros((prev) => ({
 					...prev,
-					apellidos: usuario?.nombre?.split(" ").pop() || "",
+					apellidos: apellido,
 				}));
 			} else {
+				setUsuarioEncontrado(null);
 				setFiltros((prev) => ({ ...prev, apellidos: "" }));
 			}
 		} catch {
+			setUsuarioEncontrado(null);
 			setFiltros((prev) => ({ ...prev, apellidos: "" }));
 		}
 	};
@@ -85,6 +94,7 @@ function Invitaciones({ onNavigate }) {
 		setFiltros({ cedula: "", evento: "", apellidos: "" });
 		setMetodosEnvio({ whatsapp: false, correo: false });
 		setNuevaImagen(null);
+		setUsuarioEncontrado(null);
 	};
 
 	const handleEnviarInvitacion = async () => {
@@ -98,34 +108,46 @@ function Invitaciones({ onNavigate }) {
 		}
 
 		try {
-			const codigoAlfa = `${filtros.evento
-				.slice(0, 2)
-				.toUpperCase()}${filtros.cedula.slice(-3)}${filtros.cedula
-					.charAt(0)
-					.toUpperCase()}${filtros.apellidos.charAt(0).toUpperCase()}`;
+			// Encontrar el evento seleccionado para obtener su ID
+			const eventoSeleccionado = eventos.find(e => e.nombreEvento === filtros.evento);
+			if (!eventoSeleccionado) {
+				alert("Evento no encontrado.");
+				return;
+			}
 
 			const formData = new FormData();
 			formData.append("cedula", filtros.cedula);
-			formData.append("evento", filtros.evento);
-			formData.append("codigo_unico", codigoAlfa);
-			formData.append(
-				"metodos_envio",
-				JSON.stringify(
-					Object.keys(metodosEnvio).filter((k) => metodosEnvio[k])
-				)
-			);
+			formData.append("id_evento", eventoSeleccionado.id);
+			
+			// Determinar método de envío
+			let id_metodo_envio = 1; // Por defecto correo
+			if (metodosEnvio.whatsapp && metodosEnvio.correo) {
+				id_metodo_envio = 3; // Ambos
+			} else if (metodosEnvio.whatsapp) {
+				id_metodo_envio = 2; // Solo WhatsApp
+			}
+			
+			formData.append("id_metodo_envio", id_metodo_envio);
+			formData.append("id_estado", 1); // Estado pendiente
+			
 			if (nuevaImagen) formData.append("imagen", nuevaImagen);
 
 			const res = await fetch(`${API_BASE}/invitaciones`, {
 				method: "POST",
 				body: formData,
 			});
-			if (!res.ok) throw new Error("Error al enviar invitación");
+			
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.message || "Error al enviar invitación");
+			}
 
 			await fetchInvitaciones();
 			handleLimpiar();
+			alert("Invitación enviada correctamente");
 		} catch (err) {
 			console.error(err);
+			alert(err.message || "Error al enviar invitación");
 		}
 	};
 
@@ -177,6 +199,7 @@ function Invitaciones({ onNavigate }) {
 									value={filtros.cedula}
 									onChange={handleChangeFiltro}
 									className="form-control"
+									placeholder="Ingrese la cédula del invitado"
 								/>
 							</div>
 							<div className="col-md-4">
@@ -187,6 +210,7 @@ function Invitaciones({ onNavigate }) {
 									value={filtros.apellidos}
 									readOnly
 									className="form-control"
+									placeholder="Se autocompleta al ingresar la cédula"
 								/>
 							</div>
 							<div className="col-md-4">
@@ -199,13 +223,33 @@ function Invitaciones({ onNavigate }) {
 								>
 									<option value="">Seleccione un evento</option>
 									{eventos.map((evento) => (
-										<option key={evento.id_evento} value={evento.nombre}>
-											{evento.nombre}
+										<option key={evento.id} value={evento.nombreEvento}>
+											{evento.nombreEvento} - {evento.fecha}
 										</option>
 									))}
 								</select>
 							</div>
 						</div>
+
+						{/* Información del usuario encontrado */}
+						{usuarioEncontrado && (
+							<div className="mt-3 p-3 bg-light rounded">
+								<h6 className="text-success mb-2">
+									<i className="fa-solid fa-user-check me-2"></i>
+									Usuario encontrado:
+								</h6>
+								<div className="row">
+									<div className="col-md-6">
+										<p className="mb-1"><strong>Nombre:</strong> {usuarioEncontrado.nombre}</p>
+										<p className="mb-1"><strong>Cédula:</strong> {usuarioEncontrado.cedula}</p>
+									</div>
+									<div className="col-md-6">
+										<p className="mb-1"><strong>Correo:</strong> {usuarioEncontrado.correo}</p>
+										<p className="mb-1"><strong>Teléfono:</strong> {usuarioEncontrado.telefono || 'No registrado'}</p>
+									</div>
+								</div>
+							</div>
+						)}
 
 						<div className="mt-3">
 							<label className="form-label me-3 fw-bold">
@@ -274,81 +318,137 @@ function Invitaciones({ onNavigate }) {
 						<div className="card-body">
 							{loading && <p>Cargando...</p>}
 							{error && <p className="text-danger">{error}</p>}
-							<table className="table table-bordered table-hover">
-								<thead className="table-primary">
-									<tr>
-										<th>Cédula</th>
-										<th>Evento</th>
-										<th>Código Único</th>
-										<th>Métodos</th>
-										<th>Acciones</th>
-									</tr>
-								</thead>
-								<tbody>
-									{invitaciones.map((inv) => (
-										<tr key={inv.id_invitacion}>
-											<td>{inv.cedula}</td>
-											<td>{inv.evento}</td>
-											<td>{inv.codigo_unico}</td>
-											<td>{inv.metodos_envio?.join(", ")}</td>
-											<td>
-												<Button
-													size="sm"
-													variant="info"
-													onClick={() => {
-														setInvitacionSeleccionada(inv);
-														setShowViewModal(true);
-													}}
-												>
-													Ver
-												</Button>{" "}
-												<Button
-													size="sm"
-													variant="warning"
-													onClick={() => {
-														setInvitacionSeleccionada(inv);
-														setShowEditModal(true);
-													}}
-												>
-													Editar
-												</Button>{" "}
-												<Button
-													size="sm"
-													variant="danger"
-													onClick={() => {
-														setInvitacionSeleccionada(inv);
-														setShowDeleteModal(true);
-													}}
-												>
-													Eliminar
-												</Button>
-											</td>
+							<div className="table-responsive">
+								<table className="table table-bordered table-hover">
+									<thead className="table-primary">
+										<tr>
+											<th>Nombre</th>
+											<th>Cédula</th>
+											<th>Correo</th>
+											<th>Evento</th>
+											<th>Fecha Evento</th>
+											<th>Código Único</th>
+											<th>Métodos</th>
+											<th>Acciones</th>
 										</tr>
-									))}
-								</tbody>
-							</table>
+									</thead>
+									<tbody>
+										{invitaciones.length === 0 ? (
+											<tr>
+												<td colSpan="8" className="text-center text-muted">
+													No hay invitaciones registradas
+												</td>
+											</tr>
+										) : (
+											invitaciones.map((inv) => (
+												<tr key={inv.id_invitacion}>
+													<td>{inv.nombre}</td>
+													<td>{inv.cedula}</td>
+													<td>{inv.correo}</td>
+													<td>{inv.evento}</td>
+													<td>{inv.fecha_evento}</td>
+													<td>
+														<span className="badge bg-primary">{inv.codigo_unico}</span>
+													</td>
+													<td>
+														{inv.id_metodo_envio === 1 && <span className="badge bg-success">Correo</span>}
+														{inv.id_metodo_envio === 2 && <span className="badge bg-success">WhatsApp</span>}
+														{inv.id_metodo_envio === 3 && (
+															<>
+																<span className="badge bg-success me-1">Correo</span>
+																<span className="badge bg-success">WhatsApp</span>
+															</>
+														)}
+													</td>
+													<td>
+														<Button
+															size="sm"
+															variant="info"
+															onClick={() => {
+																setInvitacionSeleccionada(inv);
+																setShowViewModal(true);
+															}}
+														>
+															Ver
+														</Button>{" "}
+														<Button
+															size="sm"
+															variant="warning"
+															onClick={() => {
+																setInvitacionSeleccionada(inv);
+																setShowEditModal(true);
+															}}
+														>
+															Editar
+														</Button>{" "}
+														<Button
+															size="sm"
+															variant="danger"
+															onClick={() => {
+																setInvitacionSeleccionada(inv);
+																setShowDeleteModal(true);
+															}}
+														>
+															Eliminar
+														</Button>
+													</td>
+												</tr>
+											))
+										)}
+									</tbody>
+								</table>
+							</div>
 						</div>
 					</div>
 
 					{/* MODALES */}
-					<Modal show={showViewModal} onHide={() => setShowViewModal(false)}>
+					<Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg">
 						<Modal.Header closeButton>
 							<Modal.Title>Detalle de Invitación</Modal.Title>
 						</Modal.Header>
 						<Modal.Body>
-							<p>
-								<strong>Cédula:</strong> {invitacionSeleccionada?.cedula}
-							</p>
-							<p>
-								<strong>Evento:</strong> {invitacionSeleccionada?.evento}
-							</p>
-							<p>
-								<strong>Código Único:</strong> {invitacionSeleccionada?.codigo_unico}
-							</p>
-							<p>
-								<strong>Métodos:</strong>{" "}
-								{invitacionSeleccionada?.metodos_envio?.join(", ")}
-							</p>
+							{invitacionSeleccionada && (
+								<div>
+									<div className="row">
+										<div className="col-md-6">
+											<h6 className="text-primary">Información del Invitado</h6>
+											<p><strong>Nombre:</strong> {invitacionSeleccionada.nombre}</p>
+											<p><strong>Cédula:</strong> {invitacionSeleccionada.cedula}</p>
+											<p><strong>Correo:</strong> {invitacionSeleccionada.correo}</p>
+											<p><strong>Teléfono:</strong> {invitacionSeleccionada.telefono || 'No registrado'}</p>
+											<p><strong>Empresa:</strong> {invitacionSeleccionada.empresa || 'No registrada'}</p>
+											<p><strong>Cargo:</strong> {invitacionSeleccionada.cargo || 'No registrado'}</p>
+										</div>
+										<div className="col-md-6">
+											<h6 className="text-primary">Información del Evento</h6>
+											<p><strong>Evento:</strong> {invitacionSeleccionada.evento}</p>
+											<p><strong>Categoría:</strong> {invitacionSeleccionada.categoria}</p>
+											<p><strong>Fecha:</strong> {invitacionSeleccionada.fecha_evento}</p>
+											<p><strong>Lugar:</strong> {invitacionSeleccionada.lugar}</p>
+											<p><strong>Código Único:</strong> 
+												<span className="badge bg-primary ms-2">{invitacionSeleccionada.codigo_unico}</span>
+											</p>
+											<p><strong>Métodos de Envío:</strong>{" "}
+												{invitacionSeleccionada.id_metodo_envio === 1 && <span className="badge bg-success">Correo</span>}
+												{invitacionSeleccionada.id_metodo_envio === 2 && <span className="badge bg-success">WhatsApp</span>}
+												{invitacionSeleccionada.id_metodo_envio === 3 && (
+													<>
+														<span className="badge bg-success me-1">Correo</span>
+														<span className="badge bg-success">WhatsApp</span>
+													</>
+												)}
+											</p>
+											<p><strong>Fecha de Envío:</strong> {new Date(invitacionSeleccionada.fecha_envio).toLocaleString()}</p>
+										</div>
+									</div>
+									{invitacionSeleccionada.qr_url && (
+										<div className="mt-3 text-center">
+											<h6 className="text-primary">Código QR</h6>
+											<img src={invitacionSeleccionada.qr_url} alt="QR Code" className="img-fluid" style={{maxWidth: '200px'}} />
+										</div>
+									)}
+								</div>
+							)}
 						</Modal.Body>
 						<Modal.Footer>
 							<Button variant="secondary" onClick={() => setShowViewModal(false)}>
