@@ -98,27 +98,52 @@ function ListaInvitados({ onNavigate }) {
   };
 
   // Manejar cambios en checkboxes
-  const handleCheckboxChange = (idx, campo) => {
-    const nuevosUsuarios = [...usuarios];
-    if (campo === 'invitar') {
-      nuevosUsuarios[idx].invitar = !nuevosUsuarios[idx].invitar;
-    } else {
-      nuevosUsuarios[idx].metodos[campo] = !nuevosUsuarios[idx].metodos[campo];
-    }
+  const handleCheckboxChange = (idUsuario, campo) => {
+    console.log(`🔄 Cambiando ${campo} para usuario ID: ${idUsuario}`);
+    const nuevosUsuarios = usuarios.map(usuario => {
+      if (usuario.id_usuario === idUsuario) {
+        if (campo === 'invitar') {
+          console.log(`✅ Usuario ${usuario.nombre} - Invitar: ${!usuario.invitar}`);
+          return { ...usuario, invitar: !usuario.invitar };
+        } else {
+          console.log(`✅ Usuario ${usuario.nombre} - ${campo}: ${!usuario.metodos[campo]}`);
+          return { 
+            ...usuario, 
+            metodos: { 
+              ...usuario.metodos, 
+              [campo]: !usuario.metodos[campo] 
+            } 
+          };
+        }
+      }
+      return usuario;
+    });
     setUsuarios(nuevosUsuarios);
   };
 
   // Manejar cambio de evento seleccionado
-  const handleEventoChange = (idx, eventoId) => {
-    const nuevosUsuarios = [...usuarios];
-    nuevosUsuarios[idx].eventoSeleccionado = eventoId;
+  const handleEventoChange = (idUsuario, eventoId) => {
+    console.log(`🔄 Cambiando evento para usuario ID: ${idUsuario} a evento: ${eventoId}`);
+    const nuevosUsuarios = usuarios.map(usuario => {
+      if (usuario.id_usuario === idUsuario) {
+        console.log(`✅ Usuario ${usuario.nombre} - Evento seleccionado: ${eventoId}`);
+        return { ...usuario, eventoSeleccionado: eventoId };
+      }
+      return usuario;
+    });
     setUsuarios(nuevosUsuarios);
   };
 
   // Manejar cambio de imagen
-  const handleImagenChange = (idx, file) => {
-    const nuevosUsuarios = [...usuarios];
-    nuevosUsuarios[idx].imagen = file;
+  const handleImagenChange = (idUsuario, file) => {
+    console.log(`🔄 Cambiando imagen para usuario ID: ${idUsuario}`);
+    const nuevosUsuarios = usuarios.map(usuario => {
+      if (usuario.id_usuario === idUsuario) {
+        console.log(`✅ Usuario ${usuario.nombre} - Imagen seleccionada: ${file ? file.name : 'ninguna'}`);
+        return { ...usuario, imagen: file };
+      }
+      return usuario;
+    });
     setUsuarios(nuevosUsuarios);
   };
 
@@ -133,48 +158,88 @@ function ListaInvitados({ onNavigate }) {
     const usuariosParaInvitar = usuarios.filter(u => u.invitar && u.eventoSeleccionado);
     
     if (usuariosParaInvitar.length === 0) {
-      alert('Seleccione al menos un usuario y un evento para enviar invitaciones');
+      alert('❌ Seleccione al menos un usuario y un evento para enviar invitaciones');
+      return;
+    }
+
+    // Validar que cada usuario tenga al menos un método de envío seleccionado
+    const usuariosSinMetodo = usuariosParaInvitar.filter(u => !u.metodos.whatsapp && !u.metodos.correo);
+    if (usuariosSinMetodo.length > 0) {
+      alert('❌ Todos los usuarios seleccionados deben tener al menos un método de envío (WhatsApp o Correo)');
       return;
     }
 
     try {
       setLoading(true);
+      setError('');
+      
+      let exitosos = 0;
+      let fallidos = 0;
       
       for (const usuario of usuariosParaInvitar) {
-        const formData = new FormData();
-        formData.append('cedula', usuario.cedula);
-        formData.append('id_evento', usuario.eventoSeleccionado);
-        
-        // Determinar método de envío
-        let id_metodo_envio = 1; // Por defecto correo
-        if (usuario.metodos.whatsapp && usuario.metodos.correo) {
-          id_metodo_envio = 3; // Ambos
-        } else if (usuario.metodos.whatsapp) {
-          id_metodo_envio = 2; // Solo WhatsApp
-        }
-        
-        formData.append('id_metodo_envio', id_metodo_envio);
-        formData.append('id_estado', '1'); // Pendiente
-        
-        if (usuario.imagen) {
-          formData.append('imagen', usuario.imagen);
-        }
+        try {
+          const formData = new FormData();
+          formData.append('cedula', usuario.cedula);
+          formData.append('id_evento', usuario.eventoSeleccionado);
+          
+          // Determinar método de envío
+          let id_metodo_envio = 1; // Por defecto correo
+          if (usuario.metodos.whatsapp && usuario.metodos.correo) {
+            id_metodo_envio = 3; // Ambos
+          } else if (usuario.metodos.whatsapp) {
+            id_metodo_envio = 2; // Solo WhatsApp
+          }
+          
+          formData.append('id_metodo_envio', id_metodo_envio);
+          formData.append('id_estado', '1'); // Pendiente
+          
+          if (usuario.imagen) {
+            formData.append('imagen', usuario.imagen);
+          }
 
-        const res = await fetch(`${API_BASE}/invitaciones`, {
-          method: 'POST',
-          body: formData
-        });
+          console.log(`📤 Enviando invitación para ${usuario.nombre} al evento ${usuario.eventoSeleccionado}`);
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || 'Error al enviar invitación');
+          const res = await fetch(`${API_BASE}/invitaciones`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            console.error(`❌ Error para ${usuario.nombre}:`, errorData);
+            fallidos++;
+          } else {
+            const responseData = await res.json();
+            console.log(`✅ Invitación enviada para ${usuario.nombre}:`, responseData);
+            exitosos++;
+          }
+        } catch (err) {
+          console.error(`❌ Error de conexión para ${usuario.nombre}:`, err);
+          fallidos++;
         }
       }
 
-      alert('Invitaciones enviadas correctamente');
-      handleLimpiar();
+      // Mostrar resultado
+      if (exitosos > 0 && fallidos === 0) {
+        alert(`✅ Todas las invitaciones se enviaron correctamente (${exitosos} enviadas)`);
+        // Notificar que se enviaron invitaciones para actualizar otras páginas
+        localStorage.setItem('lastInvitationSent', Date.now().toString());
+        // Recargar la lista de usuarios para limpiar las selecciones
+        cargarUsuarios();
+        setFiltros({ cedula: '', apellidos: '' });
+      } else if (exitosos > 0 && fallidos > 0) {
+        alert(`⚠️ Se enviaron ${exitosos} invitaciones correctamente, pero ${fallidos} fallaron. Revisa la consola para más detalles.`);
+        // Notificar que se enviaron invitaciones para actualizar otras páginas
+        localStorage.setItem('lastInvitationSent', Date.now().toString());
+        // Recargar la lista de usuarios para limpiar las selecciones
+        cargarUsuarios();
+        setFiltros({ cedula: '', apellidos: '' });
+      } else {
+        alert(`❌ No se pudo enviar ninguna invitación. Revisa la consola para más detalles.`);
+      }
     } catch (err) {
-      alert(`Error al enviar invitaciones: ${err.message}`);
+      console.error('❌ Error general:', err);
+      setError(`Error al enviar invitaciones: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -197,22 +262,25 @@ function ListaInvitados({ onNavigate }) {
   );
 
   return (
-    <div className="d-flex flex-column min-vh-100 lista-invitados-container">
-      {/* Header */}
-      <Header />
-
-      <div className="d-flex flex-grow-1">
-        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
-        <div className={`d-none d-md-block`}>
-          <Menu onNavigate={onNavigate} activeItem="eventos" />
-        </div>
-        {menuAbierto && (
-          <div className="d-md-none">
-            <Menu onNavigate={onNavigate} activeItem="eventos" />
+    <div className="d-flex min-vh-100">
+      {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+      <div className={`d-none d-md-block`}>
+        <Menu onNavigate={onNavigate} activeItem="eventos" />
+      </div>
+      {menuAbierto && (
+        <div className="d-md-none position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
+          <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" onClick={() => setMenuAbierto(false)}></div>
+          <div className="position-absolute top-0 start-0">
+            <Menu onNavigate={onNavigate} activeItem="eventos" onClose={() => setMenuAbierto(false)} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Main Content */}
+      {/* Main Content */}
+      <div className="main-content flex-grow-1 d-flex flex-column">
+        {/* Header */}
+        <Header />
+
         <main className="flex-grow-1 p-5">
         <div className="mb-2">
           <button className="lista-invitados-back-button" onClick={() => onNavigate('eventos')}>
@@ -333,7 +401,7 @@ function ListaInvitados({ onNavigate }) {
                         <select 
                           className="form-select form-select-sm"
                           value={u.eventoSeleccionado}
-                          onChange={(e) => handleEventoChange(idx, e.target.value)}
+                          onChange={(e) => handleEventoChange(u.id_usuario, e.target.value)}
                         >
                           <option value="">Seleccionar evento</option>
                           {eventos.map(evento => (
@@ -342,14 +410,26 @@ function ListaInvitados({ onNavigate }) {
                             </option>
                           ))}
                         </select>
+                        {u.eventoSeleccionado && (
+                          <small className="text-success">
+                            <i className="fa-solid fa-check-circle me-1"></i>
+                            Evento seleccionado
+                          </small>
+                        )}
                       </td>
                       <td>
                         <input 
                           type="file" 
                           className="form-control form-control-sm"
                           accept="image/*"
-                          onChange={e => handleImagenChange(idx, e.target.files[0])} 
+                          onChange={e => handleImagenChange(u.id_usuario, e.target.files[0])} 
                         />
+                        {u.imagen && (
+                          <small className="text-success">
+                            <i className="fa-solid fa-check-circle me-1"></i>
+                            {u.imagen.name}
+                          </small>
+                        )}
                       </td>
                       <td>
                         <div className="form-check">
@@ -357,19 +437,31 @@ function ListaInvitados({ onNavigate }) {
                             className="form-check-input" 
                             type="checkbox" 
                             checked={u.metodos.whatsapp} 
-                            onChange={() => handleCheckboxChange(idx, 'whatsapp')} 
+                            onChange={() => handleCheckboxChange(u.id_usuario, 'whatsapp')} 
                           />
-                          <label className="form-check-label small">WhatsApp</label>
+                          <label className="form-check-label small">
+                            <i className="fa-brands fa-whatsapp me-1 text-success"></i>
+                            WhatsApp
+                          </label>
                         </div>
                         <div className="form-check">
                           <input 
                             className="form-check-input" 
                             type="checkbox" 
                             checked={u.metodos.correo} 
-                            onChange={() => handleCheckboxChange(idx, 'correo')} 
+                            onChange={() => handleCheckboxChange(u.id_usuario, 'correo')} 
                           />
-                          <label className="form-check-label small">Correo</label>
+                          <label className="form-check-label small">
+                            <i className="fa-solid fa-envelope me-1 text-primary"></i>
+                            Correo
+                          </label>
                         </div>
+                        {(!u.metodos.whatsapp && !u.metodos.correo) && (
+                          <small className="text-warning">
+                            <i className="fa-solid fa-exclamation-triangle me-1"></i>
+                            Seleccione un método
+                          </small>
+                        )}
                       </td>
                       <td>
                         <div className="lista-invitados-checkbox-container">
@@ -377,10 +469,19 @@ function ListaInvitados({ onNavigate }) {
                             className="form-check-input" 
                             type="checkbox" 
                             checked={u.invitar} 
-                            onChange={() => handleCheckboxChange(idx, 'invitar')} 
+                            onChange={() => handleCheckboxChange(u.id_usuario, 'invitar')} 
                           />
-                          <label className="lista-invitados-checkbox-label small">Invitar</label>
+                          <label className="lista-invitados-checkbox-label small">
+                            <i className="fa-solid fa-paper-plane me-1 text-primary"></i>
+                            Invitar
+                          </label>
                         </div>
+                        {u.invitar && (
+                          <small className="text-success">
+                            <i className="fa-solid fa-check-circle me-1"></i>
+                            Listo para enviar
+                          </small>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -389,6 +490,29 @@ function ListaInvitados({ onNavigate }) {
             </table>
           </div>
         </div>
+
+        {/* Resumen de selección */}
+        {usuarios.some(u => u.invitar) && (
+          <div className="alert alert-info mt-3">
+            <h6><i className="fa-solid fa-info-circle me-2"></i>Resumen de selección:</h6>
+            <div className="row">
+              <div className="col-md-6">
+                <strong>Usuarios seleccionados:</strong> {usuarios.filter(u => u.invitar).length}
+              </div>
+              <div className="col-md-6">
+                <strong>Con evento seleccionado:</strong> {usuarios.filter(u => u.invitar && u.eventoSeleccionado).length}
+              </div>
+            </div>
+            <div className="row mt-2">
+              <div className="col-md-6">
+                <strong>Con métodos de envío:</strong> {usuarios.filter(u => u.invitar && (u.metodos.whatsapp || u.metodos.correo)).length}
+              </div>
+              <div className="col-md-6">
+                <strong>Con imagen:</strong> {usuarios.filter(u => u.invitar && u.imagen).length}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Acciones inferiores */}
         <div className="row lista-invitados-actions g-2 align-items-center mt-4">
@@ -409,7 +533,7 @@ function ListaInvitados({ onNavigate }) {
                 disabled={loading}
               >
                 <i className="fa-solid fa-paper-plane me-2"></i>
-                {loading ? 'Enviando...' : 'Enviar Invitaciones'}
+                {loading ? 'Enviando...' : `Enviar Invitaciones (${usuarios.filter(u => u.invitar && u.eventoSeleccionado && (u.metodos.whatsapp || u.metodos.correo)).length})`}
               </button>
               <button 
                 className="lista-invitados-btn-secondary"

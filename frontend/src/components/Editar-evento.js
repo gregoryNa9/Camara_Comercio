@@ -61,22 +61,25 @@ function EditarEvento({ onNavigate }) {
   );
 
   return (
-    <div className="d-flex flex-column min-vh-100 evento-form-container">
-      {/* Header */}
-      <Header />
-
-      <div className="d-flex flex-grow-1">
-        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
-        <div className={`d-none d-md-block`}>
-          <Menu onNavigate={onNavigate} activeItem="eventos" />
-        </div>
-        {menuAbierto && (
-          <div className="d-md-none">
-            <Menu onNavigate={onNavigate} activeItem="eventos" />
+    <div className="d-flex min-vh-100">
+      {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+      <div className={`d-none d-md-block`}>
+        <Menu onNavigate={onNavigate} activeItem="eventos" />
+      </div>
+      {menuAbierto && (
+        <div className="d-md-none position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
+          <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" onClick={() => setMenuAbierto(false)}></div>
+          <div className="position-absolute top-0 start-0">
+            <Menu onNavigate={onNavigate} activeItem="eventos" onClose={() => setMenuAbierto(false)} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Main Content */}
+      {/* Main Content */}
+      <div className="main-content flex-grow-1 d-flex flex-column">
+        {/* Header */}
+        <Header />
+
         <main className="flex-grow-1 p-5">
         {/* Header */}
         <div className="mb-4">

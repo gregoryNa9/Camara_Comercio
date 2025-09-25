@@ -120,22 +120,25 @@ function Historial({ onNavigate, selectedUser }) {
   );
 
   return (
-    <div className="d-flex flex-column min-vh-100 bg-light">
-      {/* Header */}
-      <Header />
-
-      <div className="d-flex flex-grow-1">
-        {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
-        <div className={`d-none d-md-block`}>
-          <Menu onNavigate={onNavigate} activeItem="reportes" />
-        </div>
-        {menuAbierto && (
-          <div className="d-md-none">
-            <Menu onNavigate={onNavigate} activeItem="reportes" />
+    <div className="d-flex min-vh-100">
+      {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
+      <div className={`d-none d-md-block`}>
+        <Menu onNavigate={onNavigate} activeItem="reportes" />
+      </div>
+      {menuAbierto && (
+        <div className="d-md-none position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
+          <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" onClick={() => setMenuAbierto(false)}></div>
+          <div className="position-absolute top-0 start-0">
+            <Menu onNavigate={onNavigate} activeItem="reportes" onClose={() => setMenuAbierto(false)} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Contenido principal */}
+      {/* Main Content */}
+      <div className="main-content flex-grow-1 d-flex flex-column">
+        {/* Header */}
+        <Header />
+
         <main className="flex-grow-1 p-5">
         <h2 className="text-primary fw-bold mb-3">Historial</h2>
         <h5 className="text-muted mb-4">

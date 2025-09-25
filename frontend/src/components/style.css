@@ -20,8 +20,15 @@
 .sidebar {
   background: #043474;
   color: #fff;
-  width: 220px;
+  width: 250px;
   padding: 1.5rem;
+  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
 }
 
 .sidebar-logo {
@@ -266,11 +273,31 @@
   margin-top: 1rem;
 }
 
+/* ===== LAYOUT PRINCIPAL ===== */
+.main-content {
+  margin-left: 250px;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  width: calc(100% - 250px);
+}
+
+.main-content-mobile {
+  margin-left: 0;
+  width: 100%;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
     height: auto;
+    position: relative;
+    min-height: auto;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
   }
   
   .filter-section .row {

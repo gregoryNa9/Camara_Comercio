@@ -5,8 +5,8 @@ const Invitacion = require("../models/Invitacion");
 const Usuario = require("../models/Usuario");
 const Evento = require("../models/Eventos");
 const generateQR = require("../utils/generateQR"); // debe devolver { qrDataURL, filePath } o similar
-const sendEmail = require("../utils/sendEmail");
-const sendWhatsApp = require("../utils/whatsappApi");
+const emailService = require("../services/emailService");
+const whatsappService = require("../services/whatsappService");
 
 /**
  * GET /api/invitaciones
@@ -112,8 +112,8 @@ exports.create = async (req, res) => {
             return res.status(400).json({ message: "Este usuario ya tiene una invitación para este evento" });
         }
 
-        // Generar código alfanumérico:
-        // Reglas: 2 primeras letras del evento + 3 últimos números de la cédula + 1ra letra del primer nombre + 1ra letra del primer apellido
+        // Generar código alfanumérico único:
+        // Reglas: 2 primeras letras del evento + 3 últimos números de la cédula + 1ra letra del primer nombre + 1ra letra del primer apellido + timestamp
         const nombreEvento = (evento.nombre_evento || "").toUpperCase();
         const pref = (nombreEvento.replace(/\s+/g, "").slice(0, 2) || "EV").toUpperCase();
 
@@ -126,7 +126,30 @@ exports.create = async (req, res) => {
         const primeraLetraNombre = (parts[0] || "").charAt(0).toUpperCase() || "X";
         const primeraLetraApellido = (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "").toUpperCase() || "X";
 
-        const codigo_unico = `${pref}${last3Ced}${primeraLetraNombre}${primeraLetraApellido}`;
+        // Generar código base
+        let codigoBase = `${pref}${last3Ced}${primeraLetraNombre}${primeraLetraApellido}`;
+        
+        // Verificar si el código ya existe y generar uno único
+        let codigo_unico = codigoBase;
+        let contador = 1;
+        
+        while (true) {
+            const existeCodigo = await Invitacion.findOne({ where: { codigo_unico } });
+            if (!existeCodigo) {
+                break; // Código único encontrado
+            }
+            // Si existe, agregar un sufijo numérico
+            codigo_unico = `${codigoBase}${contador.toString().padStart(2, '0')}`;
+            contador++;
+            
+            // Prevenir bucle infinito
+            if (contador > 99) {
+                // Si llegamos a 99, usar timestamp como último recurso
+                const timestamp = Date.now().toString().slice(-4);
+                codigo_unico = `${codigoBase}${timestamp}`;
+                break;
+            }
+        }
 
         // Generar QR con el código alfanumérico único
         const { qrDataURL, filePath: qrFilePath } = await generateQR(codigo_unico, true);
@@ -151,30 +174,87 @@ exports.create = async (req, res) => {
             id_metodo_envio,
         });
 
-        // Preparar mensajes dinámicos
-        const emailBody = `
-        <p>Hola ${parts[0] || usuario.nombre},</p>
-        <p>Has sido invitado al evento <b>${evento.nombre_evento}</b>.</p>
-        <p>Tu código: <b>${codigo_unico}</b></p>
-        <p>Presenta el siguiente QR en la entrada:</p>
-        <img src="${qrDataURL}" alt="QR">
-        `;
+        // Preparar datos para los servicios de envío
+        const datosInvitacion = {
+            nombre: parts[0] || usuario.nombre,
+            evento_nombre: evento.nombre_evento,
+            fecha_evento: evento.fecha,
+            lugar_evento: evento.lugar,
+            codigo_unico: codigo_unico,
+            qr_image: qrDataURL,
+            confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${codigo_unico}`,
+            unsubscribe_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/unsubscribe/${codigo_unico}`,
+            attachments: qrFilePath ? [qrFilePath] : []
+        };
 
-        const whatsappText = `Hola ${parts[0] || usuario.nombre}, tu código para ${evento.nombre_evento} es: ${codigo_unico}.`;
-
-        // Enviar correo (si corresponde)
+        // Enviar correo (si corresponde) con manejo de errores y reintentos
+        let emailEnviado = false;
         if (Number(id_metodo_envio) === 1 || Number(id_metodo_envio) === 3) {
-            // si sendEmail acepta (to, subject, html, attachmentsPath)
-            await sendEmail(usuario.correo, `Invitación - ${evento.nombre_evento}`, emailBody, qrFilePath ? [qrFilePath] : []);
+            try {
+                console.log(`📧 Enviando email a: ${usuario.correo}`);
+                const emailResult = await emailService.sendWithRetry(usuario.correo, datosInvitacion);
+                emailEnviado = emailResult.success;
+                if (emailEnviado) {
+                    console.log("✅ Email enviado correctamente");
+                } else {
+                    console.error("❌ Error enviando email:", emailResult.error);
+                }
+            } catch (emailError) {
+                console.error("❌ Error enviando email:", emailError);
+                // No fallar la operación completa si el email falla
+            }
         }
 
-        // Enviar WhatsApp (si corresponde)
+        // Enviar WhatsApp (si corresponde) con manejo de errores y reintentos
+        let whatsappEnviado = false;
         if (Number(id_metodo_envio) === 2 || Number(id_metodo_envio) === 3) {
-            // sendWhatsApp(phone, message, mediaUrl)
-            await sendWhatsApp(usuario.telefono, whatsappText, qrDataURL);
+            try {
+                console.log(`📱 Enviando WhatsApp a: ${usuario.telefono}`);
+                const whatsappResult = await whatsappService.sendWithRetry(usuario.telefono, datosInvitacion);
+                whatsappEnviado = whatsappResult.success;
+                if (whatsappEnviado) {
+                    console.log("✅ WhatsApp enviado correctamente");
+                } else {
+                    console.error("❌ Error enviando WhatsApp:", whatsappResult.error);
+                }
+            } catch (whatsappError) {
+                console.error("❌ Error enviando WhatsApp:", whatsappError);
+                // No fallar la operación completa si WhatsApp falla
+            }
         }
 
-        return res.status(201).json({ message: "Invitación enviada correctamente", invitacion });
+        // Preparar respuesta con estado de envíos
+        const respuesta = {
+            message: "Invitación creada correctamente",
+            invitacion: {
+                id_invitacion: invitacion.id_invitacion,
+                codigo_unico: invitacion.codigo_unico,
+                fecha_envio: invitacion.fecha_envio
+            },
+            envios: {
+                email: {
+                    enviado: emailEnviado,
+                    destinatario: usuario.correo
+                },
+                whatsapp: {
+                    enviado: whatsappEnviado,
+                    destinatario: usuario.telefono
+                }
+            }
+        };
+
+        // Determinar mensaje final basado en el éxito de los envíos
+        if (emailEnviado && whatsappEnviado) {
+            respuesta.message = "Invitación enviada correctamente por email y WhatsApp";
+        } else if (emailEnviado) {
+            respuesta.message = "Invitación enviada correctamente por email";
+        } else if (whatsappEnviado) {
+            respuesta.message = "Invitación enviada correctamente por WhatsApp";
+        } else {
+            respuesta.message = "Invitación creada pero hubo problemas con los envíos";
+        }
+
+        return res.status(201).json(respuesta);
     } catch (error) {
         console.error("Error en create invitacion:", error);
         return res.status(500).json({ message: "Error al crear invitación", error: error.message });
