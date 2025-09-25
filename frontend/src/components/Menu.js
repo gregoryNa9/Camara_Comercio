@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-function Menu({ onNavigate, activeItem }) {
+function Menu({ onNavigate, activeItem, onClose }) {
   const [openSubmenu, setOpenSubmenu] = useState(null);
 
   // Menú principal y submenús
@@ -20,8 +20,17 @@ function Menu({ onNavigate, activeItem }) {
   return (
     <aside 
       className="sidebar d-flex flex-column p-3 text-white"
-      style={{ backgroundColor: "#043474", minHeight: "100vh", width: "250px" }}
+      style={{ backgroundColor: "#043474" }}
     >
+      {/* Botón cerrar en móvil */}
+      <div className="d-md-none mb-3">
+        <button 
+          className="btn btn-outline-light btn-sm"
+          onClick={onClose}
+        >
+          <i className="fa-solid fa-times"></i>
+        </button>
+      </div>
 
       {/* Navegación */}
       <nav>
