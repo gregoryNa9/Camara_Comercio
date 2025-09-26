@@ -86,7 +86,7 @@ Presenta este código en la entrada del evento.
 
 ### **Archivo `.env` configurado:**
 ```env
-BREVO_API_KEY=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
+BREVO_API_KEY=tu_api_key_de_brevo_aqui
 BREVO_SENDER_NAME=Cámara de Comercio
 BREVO_SENDER_EMAIL=noreply@camaracomercio.com
 EMAIL_PROVIDER=brevo
