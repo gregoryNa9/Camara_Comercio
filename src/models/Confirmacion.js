@@ -9,7 +9,6 @@ const Confirmacion = sequelize.define("Confirmacion", {
     telefono: { type: DataTypes.STRING(20) },
     cargo: { type: DataTypes.STRING(100) },
     direccion: { type: DataTypes.STRING(150) },
-    id_sector: { type: DataTypes.INTEGER },
     fecha_confirmacion: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 }, { tableName: "confirmaciones", timestamps: false });
 

@@ -7,6 +7,7 @@ const Evento = require("../models/Eventos");
 const generateQR = require("../utils/generateQR"); // debe devolver { qrDataURL, filePath } o similar
 const emailService = require("../services/emailService");
 const whatsappService = require("../services/whatsappService");
+const brevoService = require("../services/brevoService");
 
 /**
  * GET /api/invitaciones
@@ -192,12 +193,13 @@ exports.create = async (req, res) => {
         if (Number(id_metodo_envio) === 1 || Number(id_metodo_envio) === 3) {
             try {
                 console.log(`📧 Enviando email a: ${usuario.correo}`);
-                const emailResult = await emailService.sendWithRetry(usuario.correo, datosInvitacion);
+                // Usar Brevo para envío de formulario (Etapa 1)
+                const emailResult = await brevoService.sendFormularioRegistro(usuario.correo, datosInvitacion);
                 emailEnviado = emailResult.success;
                 if (emailEnviado) {
-                    console.log("✅ Email enviado correctamente");
+                    console.log("✅ Email enviado correctamente con Brevo");
                 } else {
-                    console.error("❌ Error enviando email:", emailResult.error);
+                    console.error("❌ Error enviando email con Brevo:", emailResult.error);
                 }
             } catch (emailError) {
                 console.error("❌ Error enviando email:", emailError);
@@ -210,12 +212,13 @@ exports.create = async (req, res) => {
         if (Number(id_metodo_envio) === 2 || Number(id_metodo_envio) === 3) {
             try {
                 console.log(`📱 Enviando WhatsApp a: ${usuario.telefono}`);
-                const whatsappResult = await whatsappService.sendWithRetry(usuario.telefono, datosInvitacion);
+                // Usar Brevo para envío de formulario (Etapa 1)
+                const whatsappResult = await brevoService.sendFormularioWhatsApp(usuario.telefono, datosInvitacion);
                 whatsappEnviado = whatsappResult.success;
                 if (whatsappEnviado) {
-                    console.log("✅ WhatsApp enviado correctamente");
+                    console.log("✅ WhatsApp enviado correctamente con Brevo");
                 } else {
-                    console.error("❌ Error enviando WhatsApp:", whatsappResult.error);
+                    console.error("❌ Error enviando WhatsApp con Brevo:", whatsappResult.error);
                 }
             } catch (whatsappError) {
                 console.error("❌ Error enviando WhatsApp:", whatsappError);
@@ -337,5 +340,237 @@ exports.delete = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(400).json({ message: "Error al eliminar invitación", error: error.message });
+    }
+};
+
+/**
+ * POST /api/invitaciones/enviar-formulario
+ * ETAPA 1: Enviar formulario de registro usando Brevo
+ */
+exports.enviarFormularioBrevo = async (req, res) => {
+    try {
+        const { invitacionIds, metodoEnvio } = req.body; // 'email', 'whatsapp', o 'ambos'
+        
+        if (!invitacionIds || !Array.isArray(invitacionIds) || invitacionIds.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Se requiere al menos una invitación" 
+            });
+        }
+
+        const resultados = [];
+        
+        for (const invitacionId of invitacionIds) {
+            try {
+                // Obtener datos de la invitación
+                const invitacion = await Invitacion.findByPk(invitacionId, {
+                    include: [
+                        { model: Usuario, as: 'Usuario' },
+                        { model: Evento, as: 'Evento' }
+                    ]
+                });
+
+                if (!invitacion) {
+                    resultados.push({
+                        id: invitacionId,
+                        success: false,
+                        error: 'Invitación no encontrada'
+                    });
+                    continue;
+                }
+
+                // Preparar datos para el formulario
+                const datosInvitacion = {
+                    nombre: invitacion.Usuario.nombre,
+                    evento_nombre: invitacion.Evento.nombre_evento,
+                    fecha_evento: invitacion.Evento.fecha,
+                    lugar_evento: invitacion.Evento.lugar,
+                    codigo_unico: invitacion.codigo_unico,
+                    formulario_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/formulario/${invitacion.codigo_unico}`
+                };
+
+                const resultadoEnvio = {
+                    id: invitacionId,
+                    email: null,
+                    whatsapp: null
+                };
+
+                // Enviar email formulario si se solicita
+                if (metodoEnvio === 'email' || metodoEnvio === 'ambos') {
+                    if (invitacion.Usuario.correo) {
+                        const emailResult = await brevoService.sendFormularioRegistro(
+                            invitacion.Usuario.correo, 
+                            datosInvitacion
+                        );
+                        resultadoEnvio.email = emailResult;
+                    } else {
+                        resultadoEnvio.email = { success: false, error: 'No hay email registrado' };
+                    }
+                }
+
+                // Enviar WhatsApp formulario si se solicita
+                if (metodoEnvio === 'whatsapp' || metodoEnvio === 'ambos') {
+                    if (invitacion.Usuario.telefono) {
+                        const whatsappResult = await brevoService.sendFormularioWhatsApp(
+                            invitacion.Usuario.telefono, 
+                            datosInvitacion
+                        );
+                        resultadoEnvio.whatsapp = whatsappResult;
+                    } else {
+                        resultadoEnvio.whatsapp = { success: false, error: 'No hay teléfono registrado' };
+                    }
+                }
+
+                // Actualizar estado de la invitación (formulario enviado)
+                await invitacion.update({
+                    fecha_envio: new Date(),
+                    id_metodo_envio: metodoEnvio === 'email' ? 1 : metodoEnvio === 'whatsapp' ? 2 : 3,
+                    id_estado: 2 // Estado: Formulario enviado
+                });
+
+                resultados.push(resultadoEnvio);
+
+            } catch (error) {
+                console.error(`Error procesando invitación ${invitacionId}:`, error);
+                resultados.push({
+                    id: invitacionId,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Formularios enviados a ${invitacionIds.length} invitaciones`,
+            etapa: 1,
+            resultados: resultados
+        });
+
+    } catch (error) {
+        console.error("Error en enviarFormularioBrevo:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error interno del servidor",
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * POST /api/invitaciones/enviar-codigos
+ * ETAPA 2: Enviar códigos QR y alfanuméricos usando Brevo
+ */
+exports.enviarCodigosBrevo = async (req, res) => {
+    try {
+        const { invitacionIds, metodoEnvio } = req.body; // 'email', 'whatsapp', o 'ambos'
+        
+        if (!invitacionIds || !Array.isArray(invitacionIds) || invitacionIds.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Se requiere al menos una invitación" 
+            });
+        }
+
+        const resultados = [];
+        
+        for (const invitacionId of invitacionIds) {
+            try {
+                // Obtener datos de la invitación
+                const invitacion = await Invitacion.findByPk(invitacionId, {
+                    include: [
+                        { model: Usuario, as: 'Usuario' },
+                        { model: Evento, as: 'Evento' }
+                    ]
+                });
+
+                if (!invitacion) {
+                    resultados.push({
+                        id: invitacionId,
+                        success: false,
+                        error: 'Invitación no encontrada'
+                    });
+                    continue;
+                }
+
+                // Generar QR
+                const qrResult = await generateQR(invitacion.codigo_unico);
+                
+                // Preparar datos para el envío de códigos
+                const datosInvitacion = {
+                    nombre: invitacion.Usuario.nombre,
+                    evento_nombre: invitacion.Evento.nombre_evento,
+                    fecha_evento: invitacion.Evento.fecha,
+                    lugar_evento: invitacion.Evento.lugar,
+                    codigo_unico: invitacion.codigo_unico,
+                    qr_image: qrResult.qrDataURL, // Base64 para adjunto
+                    confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${invitacion.codigo_unico}`
+                };
+
+                const resultadoEnvio = {
+                    id: invitacionId,
+                    email: null,
+                    whatsapp: null
+                };
+
+                // Enviar email códigos si se solicita
+                if (metodoEnvio === 'email' || metodoEnvio === 'ambos') {
+                    if (invitacion.Usuario.correo) {
+                        const emailResult = await brevoService.sendCodigosInvitacion(
+                            invitacion.Usuario.correo, 
+                            datosInvitacion
+                        );
+                        resultadoEnvio.email = emailResult;
+                    } else {
+                        resultadoEnvio.email = { success: false, error: 'No hay email registrado' };
+                    }
+                }
+
+                // Enviar WhatsApp códigos si se solicita
+                if (metodoEnvio === 'whatsapp' || metodoEnvio === 'ambos') {
+                    if (invitacion.Usuario.telefono) {
+                        const whatsappResult = await brevoService.sendCodigosWhatsApp(
+                            invitacion.Usuario.telefono, 
+                            datosInvitacion
+                        );
+                        resultadoEnvio.whatsapp = whatsappResult;
+                    } else {
+                        resultadoEnvio.whatsapp = { success: false, error: 'No hay teléfono registrado' };
+                    }
+                }
+
+                // Actualizar estado de la invitación (códigos enviados)
+                await invitacion.update({
+                    fecha_envio: new Date(),
+                    id_metodo_envio: metodoEnvio === 'email' ? 1 : metodoEnvio === 'whatsapp' ? 2 : 3,
+                    id_estado: 3 // Estado: Códigos enviados
+                });
+
+                resultados.push(resultadoEnvio);
+
+            } catch (error) {
+                console.error(`Error procesando invitación ${invitacionId}:`, error);
+                resultados.push({
+                    id: invitacionId,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Códigos enviados a ${invitacionIds.length} invitaciones`,
+            etapa: 2,
+            resultados: resultados
+        });
+
+    } catch (error) {
+        console.error("Error en enviarCodigosBrevo:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error interno del servidor",
+            error: error.message 
+        });
     }
 };

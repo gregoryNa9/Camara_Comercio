@@ -25,6 +25,11 @@ const integrations = {
                 apiKey: process.env.MAILGUN_API_KEY,
                 domain: process.env.MAILGUN_DOMAIN,
                 from: process.env.MAILGUN_FROM_EMAIL || 'noreply@tuevento.com'
+            },
+            brevo: {
+                apiKey: process.env.BREVO_API_KEY,
+                senderName: process.env.BREVO_SENDER_NAME || 'Cámara de Comercio',
+                senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@camaracomercio.com'
             }
         },
         // Configuración por defecto
@@ -98,6 +103,11 @@ const integrations = {
             api_whatsapp: {
                 url: process.env.WHATSAPP_API_URL,
                 token: process.env.WHATSAPP_API_TOKEN
+            },
+            brevo_whatsapp: {
+                apiKey: process.env.BREVO_API_KEY,
+                templateId: process.env.BREVO_WHATSAPP_TEMPLATE_ID,
+                senderNumber: process.env.BREVO_WHATSAPP_SENDER
             }
         },
         // Configuración por defecto

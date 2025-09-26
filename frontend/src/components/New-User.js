@@ -34,7 +34,6 @@ function NewUser({ onNavigate }) {
     empresa: '',
     cargo: '',
     direccion: '',
-    id_sector: null,
     usuario: '', // Se generará automáticamente
     password: '', // Se generará automáticamente
     // El rol se asigna automáticamente por la base de datos (usuario por defecto)
@@ -96,7 +95,6 @@ function NewUser({ onNavigate }) {
           empresa: '',
           cargo: '',
           direccion: '',
-          id_sector: null,
           usuario: '', // Se generará automáticamente
           password: '', // Se generará automáticamente
           // El rol se asigna automáticamente por la base de datos
@@ -131,7 +129,6 @@ function NewUser({ onNavigate }) {
       empresa: '',
       cargo: '',
       direccion: '',
-      id_sector: null,
       usuario: '', // Se generará automáticamente
       password: '', // Se generará automáticamente
       // El rol se asigna automáticamente por la base de datos

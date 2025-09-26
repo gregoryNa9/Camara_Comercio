@@ -153,7 +153,6 @@ function Confirmaciones({ onNavigate }) {
               <p><b>Teléfono:</b> {selected.telefono || "-"}</p>
               <p><b>Cargo:</b> {selected.cargo || "-"}</p>
               <p><b>Dirección:</b> {selected.direccion || "-"}</p>
-              <p><b>Sector ID:</b> {selected.id_sector || "-"}</p>
               <p><b>Fecha Confirmación:</b> {formatDate(selected.fecha_confirmacion)}</p>
             </div>
           ) : (

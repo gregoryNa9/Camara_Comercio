@@ -8,7 +8,6 @@ require("./models/Invitacion");
 require("./models/Confirmacion");
 require("./models/MetodoEnvio");
 require("./models/EstadoInvitacion");
-require("./models/SectorEconomico");
 require("./models/Eventos"); // 👈 Modelo de eventos
 
 // 🔹 Cargar relaciones entre modelos
@@ -21,7 +20,6 @@ const invitacionesRoutes = require("./routes/invitaciones.routes");
 const confirmacionesRoutes = require("./routes/confirmaciones.routes");
 const metodosRoutes = require("./routes/metodos.routes");
 const estadosRoutes = require("./routes/estados.routes");
-const sectoresRoutes = require("./routes/sectores.routes");
 const eventosRoutes = require("./routes/eventos.routes"); // 👈 Nombre correcto
 const reportesRoutes = require("./routes/reportes.routes"); // 👈 Rutas de reportes
 
@@ -39,7 +37,6 @@ app.use("/api/invitaciones", invitacionesRoutes);
 app.use("/api/confirmaciones", confirmacionesRoutes);
 app.use("/api/metodos", metodosRoutes);
 app.use("/api/estados", estadosRoutes);
-app.use("/api/sectores", sectoresRoutes);
 app.use("/api/eventos", eventosRoutes); // 👈 Ruta funcionando
 app.use("/api/reportes", reportesRoutes); // 👈 Rutas de reportes
 

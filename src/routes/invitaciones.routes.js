@@ -25,6 +25,8 @@ router.get("/", controller.getAll);
 router.get("/usuario/:id", controller.getByUsuario); // Obtener invitaciones por usuario
 // Para crear: usamos upload.single('imagen') (el campo en el form debe llamarse 'imagen')
 router.post("/", upload.single("imagen"), controller.create);
+router.post("/enviar-formulario", controller.enviarFormularioBrevo); // ETAPA 1: Enviar formulario
+router.post("/enviar-codigos", controller.enviarCodigosBrevo); // ETAPA 2: Enviar códigos
 router.put("/:id", controller.update);
 router.delete("/:id", controller.delete);
 
