@@ -1,0 +1,42 @@
+{
+  "name": "practicasii",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "bootstrap": "^5.3.8",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.15.0",
+    "nodemailer": "^7.0.6",
+    "qrcode": "^1.5.4",
+    "react-router-dom": "^7.6.3",
+    "sequelize": "^6.37.7",
+    "uuid": "^11.1.0",
+    "validator": "^13.15.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gregoryNa9/Practicas_Admin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gregoryNa9/Practicas_Admin/issues"
+  },
+  "homepage": "https://github.com/gregoryNa9/Practicas_Admin#readme",
+  "description": ""
+}
