@@ -12,7 +12,7 @@ class EmailService {
     initializeTransporter() {
         try {
             if (this.provider === 'gmail') {
-                this.transporter = nodemailer.createTransporter({
+                this.transporter = nodemailer.createTransport({
                     service: this.config.service,
                     port: this.config.port,
                     secure: this.config.secure,
@@ -20,7 +20,7 @@ class EmailService {
                 });
             } else if (this.provider === 'sendgrid') {
                 // Implementar SendGrid
-                this.transporter = nodemailer.createTransporter({
+                this.transporter = nodemailer.createTransport({
                     service: 'SendGrid',
                     auth: {
                         user: 'apikey',

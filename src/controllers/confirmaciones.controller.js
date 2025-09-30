@@ -1,6 +1,6 @@
 const Confirmacion = require("../models/Confirmacion");
 const Formulario = require("../models/Formulario");
-const Evento = require("../models/Evento");
+const Evento = require("../models/Eventos");
 
 // Obtener todas las confirmaciones con datos planos y nombre del evento
 exports.getAll = async (req, res) => {
