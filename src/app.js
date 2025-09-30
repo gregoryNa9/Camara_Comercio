@@ -8,7 +8,7 @@ require("./models/Invitacion");
 require("./models/Confirmacion");
 require("./models/MetodoEnvio");
 require("./models/EstadoInvitacion");
-require("./models/Eventos"); // 👈 Modelo de eventos
+require("./models/Eventos"); 
 
 // 🔹 Cargar relaciones entre modelos
 require("./models/associations");
