@@ -189,6 +189,7 @@ class BrevoService {
                     <div class="highlight">
                         <h3>⚠️ Acción Requerida</h3>
                         <p>Para completar tu registro y recibir tu código de acceso, debes llenar el formulario de confirmación.</p>
+                        <p><strong>Tu código de invitación es:</strong> <span style="background-color: #fff3cd; padding: 5px 10px; border-radius: 5px; font-family: monospace; font-size: 18px; font-weight: bold;">${datosInvitacion.codigo_unico}</span></p>
                     </div>
                     
                     <div class="form-section">
@@ -196,14 +197,14 @@ class BrevoService {
                         <p>En este formulario podrás:</p>
                         <ul>
                             <li>✅ Confirmar tu asistencia</li>
-                            <li>✅ Registrar acompañantes</li>
+                            <li>✅ Registrar acompañantes (máximo ${datosInvitacion.numero_acompanantes || 0})</li>
                             <li>✅ Proporcionar información adicional</li>
                             <li>✅ Especificar necesidades especiales</li>
                         </ul>
                     </div>
                     
                     <div style="text-align: center;">
-                        <a href="${datosInvitacion.formulario_url || 'http://localhost:3000/formulario/' + datosInvitacion.codigo_unico}" class="btn">
+                        <a href="${datosInvitacion.formulario_url || 'http://localhost:8080/formulario-publico/?codigo=' + datosInvitacion.codigo_unico}" class="btn">
                             📝 Llenar Formulario
                         </a>
                     </div>
@@ -390,9 +391,11 @@ Has sido invitado al evento: *${datosInvitacion.evento_nombre}*
 ⚠️ *ACCIÓN REQUERIDA*
 Para completar tu registro y recibir tu código de acceso, debes llenar el formulario de confirmación.
 
+🎫 *Tu código de invitación es: ${datosInvitacion.codigo_unico}*
+
 En el formulario podrás:
 ✅ Confirmar tu asistencia
-✅ Registrar acompañantes
+✅ Registrar acompañantes (máximo ${datosInvitacion.numero_acompanantes || 0})
 ✅ Proporcionar información adicional
 
 🔗 Formulario: ${datosInvitacion.formulario_url || 'http://localhost:3000/formulario/' + datosInvitacion.codigo_unico}
@@ -521,6 +524,176 @@ Presenta este código en la entrada del evento.
         }
         
         throw new Error(`Falló después de ${maxAttempts} intentos. Último error: ${lastError}`);
+    }
+
+    /**
+     * Envía códigos de confirmación a acompañantes
+     * @param {string} destinatario - Email del acompañante
+     * @param {Object} datosAcompanante - Datos del acompañante y evento
+     * @returns {Promise<Object>} Resultado del envío
+     */
+    async sendCodigosAcompanante(destinatario, datosAcompanante) {
+        try {
+            const template = this.generateAcompananteTemplate(datosAcompanante);
+            
+            const emailData = {
+                sender: {
+                    name: process.env.BREVO_SENDER_NAME || "Cámara de Comercio",
+                    email: process.env.BREVO_SENDER_EMAIL || "noreply@camaracomercio.com"
+                },
+                to: [
+                    {
+                        email: destinatario,
+                        name: datosAcompanante.nombre
+                    }
+                ],
+                subject: `🎫 Tu código de confirmación - ${datosAcompanante.evento_nombre}`,
+                htmlContent: template,
+                textContent: this.generateAcompananteTextTemplate(datosAcompanante)
+            };
+
+            const response = await axios.post(`${this.baseUrl}/smtp/email`, emailData, {
+                headers: this.headers
+            });
+            
+            return {
+                success: true,
+                messageId: response.data.messageId,
+                message: "Email enviado correctamente al acompañante"
+            };
+        } catch (error) {
+            console.error("Error enviando email a acompañante:", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Genera template HTML para acompañantes
+     * @param {Object} datos - Datos del acompañante
+     * @returns {string} Template HTML
+     */
+    generateAcompananteTemplate(datos) {
+        const fechaEvento = new Date(datos.fecha_evento).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Código de Confirmación - Acompañante</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #043474; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .code-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #043474; }
+                .code { font-size: 24px; font-weight: bold; color: #043474; text-align: center; padding: 15px; background: #e8f4fd; border-radius: 5px; margin: 10px 0; }
+                .qr-section { text-align: center; margin: 20px 0; }
+                .qr-image { max-width: 200px; height: auto; border: 2px solid #043474; border-radius: 8px; }
+                .event-info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+                .highlight { color: #043474; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎫 Código de Confirmación</h1>
+                    <p>Hola ${datos.nombre}, has sido registrado como acompañante</p>
+                </div>
+                
+                <div class="content">
+                    <p>Estimado/a <span class="highlight">${datos.nombre}</span>,</p>
+                    
+                    <p>Has sido registrado como acompañante por <span class="highlight">${datos.invitado_principal}</span> para el siguiente evento:</p>
+                    
+                    <div class="event-info">
+                        <h3>📅 ${datos.evento_nombre}</h3>
+                        <p><strong>📅 Fecha:</strong> ${fechaEvento}</p>
+                        <p><strong>📍 Lugar:</strong> ${datos.lugar_evento}</p>
+                    </div>
+                    
+                    <div class="code-section">
+                        <h3>🔑 Tu Código de Confirmación</h3>
+                        <div class="code">${datos.codigo_unico}</div>
+                        <p style="text-align: center; margin: 10px 0;">
+                            <strong>Conserva este código para tu ingreso al evento</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="qr-section">
+                        <h3>📱 Código QR</h3>
+                        <img src="http://localhost:8080${datos.qr_url}" alt="Código QR" class="qr-image">
+                        <p>Presenta este código QR en la entrada del evento</p>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                        <h4>⚠️ Información Importante</h4>
+                        <ul>
+                            <li>Este código es personal e intransferible</li>
+                            <li>Debes presentar el código QR o alfanumérico en la entrada</li>
+                            <li>Tu acompañante principal es: <strong>${datos.invitado_principal}</strong></li>
+                        </ul>
+                    </div>
+                    
+                    <p>Si tienes alguna pregunta, contacta a tu acompañante principal o a la organización del evento.</p>
+                    
+                    <p>¡Esperamos verte en el evento!</p>
+                </div>
+                
+                <div class="footer">
+                    <p>Cámara de Comercio - Sistema de Gestión de Eventos</p>
+                    <p>Este es un mensaje automático, por favor no responder.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        `;
+    }
+
+    /**
+     * Genera template de texto plano para acompañantes
+     * @param {Object} datos - Datos del acompañante
+     * @returns {string} Template de texto
+     */
+    generateAcompananteTextTemplate(datos) {
+        const fechaEvento = new Date(datos.fecha_evento).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return `
+CÓDIGO DE CONFIRMACIÓN - ACOMPAÑANTE
+
+Hola ${datos.nombre},
+
+Has sido registrado como acompañante por ${datos.invitado_principal} para el siguiente evento:
+
+EVENTO: ${datos.evento_nombre}
+FECHA: ${fechaEvento}
+LUGAR: ${datos.lugar_evento}
+
+TU CÓDIGO DE CONFIRMACIÓN: ${datos.codigo_unico}
+
+INFORMACIÓN IMPORTANTE:
+- Este código es personal e intransferible
+- Debes presentar el código en la entrada del evento
+- Tu acompañante principal es: ${datos.invitado_principal}
+
+¡Esperamos verte en el evento!
+
+Cámara de Comercio - Sistema de Gestión de Eventos
+        `;
     }
 }
 

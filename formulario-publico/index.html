@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Asistencia - Cámara de Comercio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 900px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .form-section h3 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,123,255,0.3);
+        }
+        
+        .btn-outline-primary {
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-danger {
+            border-radius: 15px;
+            padding: 6px 12px;
+        }
+        
+        .acompanante-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .acompanante-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .acompanante-header {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 12px 20px;
+            font-weight: 600;
+        }
+        
+        .sector-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .sector-option {
+            position: relative;
+        }
+        
+        .sector-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .sector-option label {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .sector-option input[type="radio"]:checked + label {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+        
+        .sector-option label:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .sector-option input[type="radio"]:checked + label:hover {
+            background: #0056b3;
+        }
+        
+        .alert-info {
+            background: linear-gradient(45deg, #d1ecf1, #bee5eb);
+            border: 1px solid #b8daff;
+            border-radius: 10px;
+            color: #0c5460;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-number {
+            background: #007bff;
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+        }
+        
+        .step-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+        
+        .step.active .step-label {
+            color: #007bff;
+        }
+        
+        .step.completed .step-label {
+            color: #28a745;
+        }
+        
+        .step-connector {
+            width: 30px;
+            height: 2px;
+            background: #e9ecef;
+            margin: 0 10px;
+        }
+        
+        .step.completed + .step .step-connector {
+            background: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="text-center py-4">
+                <img src="https://via.placeholder.com/200x80/007bff/ffffff?text=C%C3%A1mara+Comercio" alt="Logo" class="mb-3" style="max-width: 200px;">
+                <h1 class="text-primary mb-2">Confirmación de Asistencia</h1>
+                <p class="text-muted">Confirma tu participación en el evento</p>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Validar Código</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Datos Personales</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Confirmación</div>
+                </div>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Step 1: Validar Código -->
+            <div id="step1Content" class="step-content">
+                <div class="form-section">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                        <h4>Ingresa tu código de invitación</h4>
+                        <p class="text-muted">Ingresa el código que recibiste por email o WhatsApp</p>
+                    </div>
+
+                    <form id="codigoForm">
+                        <div class="mb-4">
+                            <label for="codigo" class="form-label">Código de Invitación</label>
+                            <input type="text" class="form-control form-control-lg text-center" id="codigo" 
+                                   placeholder="Ej: EV028FE" required style="font-size: 1.2rem; letter-spacing: 2px;">
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search me-2"></i>Validar Código
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Step 2: Formulario de Datos -->
+            <div id="step2Content" class="step-content" style="display: none;">
+                <div class="form-section">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-check fa-3x text-success mb-3"></i>
+                        <h4>Completa tus datos</h4>
+                        <p class="text-muted">Confirma tu asistencia proporcionando tus datos</p>
+                    </div>
+
+                    <!-- Información del evento -->
+                    <div class="event-info mb-4 p-3 bg-light rounded" id="eventInfo" style="display: none;">
+                        <h5><i class="fas fa-calendar-alt me-2"></i>Información del Evento</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Evento:</strong> <span id="eventoNombre"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Fecha:</strong> <span id="eventoFecha"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Lugar:</strong> <span id="eventoLugar"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Hora:</strong> <span id="eventoHora"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="confirmacionForm">
+                        <input type="hidden" id="codigoValidado">
+                        
+                        <!-- Datos Personales -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label">Nombre Completo *</label>
+                                <input type="text" class="form-control" id="nombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="correo" class="form-label">Correo Electrónico *</label>
+                                <input type="email" class="form-control" id="correo" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="telefono">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cargo" class="form-label">Cargo</label>
+                                <input type="text" class="form-control" id="cargo">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="empresa" class="form-label">Empresa o Institución</label>
+                                <input type="text" class="form-control" id="empresa">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="direccion" class="form-label">Dirección / Ciudad</label>
+                                <input type="text" class="form-control" id="direccion">
+                            </div>
+                        </div>
+
+                        <!-- Sector Económico -->
+                        <div class="mb-4">
+                            <label class="form-label">Sector Económico</label>
+                            <div class="sector-options">
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector1" value="Productores / Agroindustria">
+                                    <label for="sector1">Productores / Agroindustria</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector2" value="Industriales / Manufactureros">
+                                    <label for="sector2">Industriales / Manufactureros</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector3" value="Comerciantes / Distribuidores">
+                                    <label for="sector3">Comerciantes / Distribuidores</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector4" value="Importadores">
+                                    <label for="sector4">Importadores</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector5" value="Exportadores">
+                                    <label for="sector5">Exportadores</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector6" value="Salud">
+                                    <label for="sector6">Salud</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector7" value="Servicios Empresariales">
+                                    <label for="sector7">Servicios Empresariales</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector8" value="Logística y Transporte">
+                                    <label for="sector8">Logística y Transporte</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector9" value="Finanzas y Seguros">
+                                    <label for="sector9">Finanzas y Seguros</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector10" value="Tecnología e Innovación">
+                                    <label for="sector10">Tecnología e Innovación</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector11" value="Turístico">
+                                    <label for="sector11">Turístico</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector12" value="Servicios">
+                                    <label for="sector12">Servicios</label>
+                                </div>
+                                <div class="sector-option">
+                                    <input type="radio" name="sector" id="sector13" value="Otro">
+                                    <label for="sector13">Otro</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Acompañantes -->
+                        <div class="mb-4" id="acompanantesSection" style="display: none;">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-users me-2"></i>Acompañantes
+                            </h5>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Puedes registrar hasta <span id="maxAcompanantes">0</span> acompañantes
+                            </div>
+                            
+                            <div id="acompanantesList">
+                                <!-- Los acompañantes se agregarán dinámicamente aquí -->
+                            </div>
+                            
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addAcompananteBtn" style="display: inline-block;">
+                        <i class="fas fa-plus me-1"></i>Agregar Acompañante
+                    </button>
+                        </div>
+
+                        <!-- Términos y Condiciones -->
+                        <div class="form-check mb-4">
+                            <input type="checkbox" class="form-check-input" id="aceptoTerminos" required>
+                            <label class="form-check-label" for="aceptoTerminos">
+                                Acepto los <a href="#" target="_blank">Términos y Condiciones</a>
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="volverPaso1()">
+                                <i class="fas fa-arrow-left me-2"></i>Volver
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-text">Confirmar Asistencia</span>
+                                <span class="loading-spinner" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Step 3: Confirmación -->
+            <div id="step3Content" class="step-content" style="display: none;">
+                <div class="form-section text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-5x text-success mb-3"></i>
+                        <h3 class="text-success">¡Confirmación Exitosa!</h3>
+                        <p class="text-muted">Tu asistencia ha sido confirmada correctamente</p>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <h5>Detalles de la Confirmación</h5>
+                        <p><strong>Nombre:</strong> <span id="confirmacionNombre"></span></p>
+                        <p><strong>Evento:</strong> <span id="confirmacionEvento"></span></p>
+                        <p><strong>Fecha:</strong> <span id="confirmacionFecha"></span></p>
+                        <p><strong>Acompañantes:</strong> <span id="confirmacionAcompanantes"></span></p>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" onclick="iniciarNuevo()">
+                        <i class="fas fa-plus me-2"></i>Nueva Confirmación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let datosEvento = null;
+        let maxAcompanantes = 0;
+        let acompanantes = [];
+
+        // Función para mostrar alertas
+        function mostrarAlerta(mensaje, tipo = 'danger') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.id = alertId;
+            alertDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Función para cambiar pasos
+        function cambiarPaso(paso) {
+            // Ocultar todos los pasos
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            // Mostrar el paso actual
+            document.getElementById(`step${paso}Content`).style.display = 'block';
+            
+            // Actualizar indicadores
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index + 1 < paso) {
+                    step.classList.add('completed');
+                } else if (index + 1 === paso) {
+                    step.classList.add('active');
+                }
+            });
+        }
+
+        // Función para agregar acompañante
+        function agregarAcompanante() {
+            if (acompanantes.length >= maxAcompanantes) {
+                mostrarAlerta('Has alcanzado el máximo de acompañantes permitidos', 'warning');
+                return;
+            }
+            
+            const acompananteId = Date.now();
+            const acompanante = {
+                id: acompananteId,
+                nombre: '',
+                cedula: '',
+                correo: '',
+                telefono: '',
+                cargo: '',
+                empresa: ''
+            };
+            
+            acompanantes.push(acompanante);
+            renderizarAcompanantes();
+        }
+        
+        // Función para eliminar acompañante
+        function eliminarAcompanante(id) {
+            acompanantes = acompanantes.filter(acompanante => acompanante.id !== id);
+            renderizarAcompanantes();
+        }
+        
+        // Función para actualizar datos de acompañante
+        function actualizarAcompanante(id, campo, valor) {
+            const acompanante = acompanantes.find(acompanante => acompanante.id === id);
+            if (acompanante) {
+                acompanante[campo] = valor;
+            }
+        }
+        
+        // Función para renderizar la lista de acompañantes
+        function renderizarAcompanantes() {
+            const container = document.getElementById('acompanantesList');
+            const addBtn = document.getElementById('addAcompananteBtn');
+            
+            container.innerHTML = '';
+            
+            acompanantes.forEach((acompanante, index) => {
+                const acompananteDiv = document.createElement('div');
+                acompananteDiv.className = 'acompanante-card';
+                acompananteDiv.innerHTML = `
+                    <div class="acompanante-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Acompañante ${index + 1}</h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarAcompanante(${acompanante.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Nombre Completo *</label>
+                                <input type="text" class="form-control" 
+                                       value="${acompanante.nombre}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'nombre', this.value)"
+                                       required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Cédula</label>
+                                <input type="text" class="form-control" 
+                                       value="${acompanante.cedula}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'cedula', this.value)">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Correo</label>
+                                <input type="email" class="form-control" 
+                                       value="${acompanante.correo}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'correo', this.value)">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" 
+                                       value="${acompanante.telefono}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'telefono', this.value)">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Cargo</label>
+                                <input type="text" class="form-control" 
+                                       value="${acompanante.cargo}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'cargo', this.value)">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Empresa</label>
+                                <input type="text" class="form-control" 
+                                       value="${acompanante.empresa}"
+                                       onchange="actualizarAcompanante(${acompanante.id}, 'empresa', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(acompananteDiv);
+            });
+            
+            // Mostrar/ocultar botón de agregar
+            if (acompanantes.length < maxAcompanantes) {
+                addBtn.style.display = 'inline-block';
+            } else {
+                addBtn.style.display = 'none';
+            }
+        }
+
+        // Validar código de invitación
+        document.getElementById('codigoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+            const button = e.target.querySelector('button[type="submit"]');
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/invitaciones/validar-codigo/${codigo}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Guardar datos del evento
+                    datosEvento = data.invitacion.evento;
+                    maxAcompanantes = data.invitacion.numero_acompanantes || 0;
+                    document.getElementById('codigoValidado').value = codigo;
+                    
+                    // Mostrar información del evento
+                    document.getElementById('eventoNombre').textContent = datosEvento.nombre_evento;
+                    document.getElementById('eventoFecha').textContent = new Date(datosEvento.fecha).toLocaleDateString('es-ES');
+                    document.getElementById('eventoLugar').textContent = datosEvento.lugar;
+                    document.getElementById('eventoHora').textContent = `${datosEvento.hora_inicio} - ${datosEvento.hora_fin}`;
+                    document.getElementById('eventInfo').style.display = 'block';
+                    
+                    // Configurar sección de acompañantes
+                    console.log('🔍 Configurando acompañantes:', maxAcompanantes);
+                    document.getElementById('maxAcompanantes').textContent = maxAcompanantes;
+                    if (maxAcompanantes > 0) {
+                        console.log('✅ Mostrando sección de acompañantes');
+                        document.getElementById('acompanantesSection').style.display = 'block';
+                        document.getElementById('addAcompananteBtn').onclick = agregarAcompanante;
+                        document.getElementById('addAcompananteBtn').style.display = 'inline-block';
+                    } else {
+                        console.log('❌ No hay acompañantes permitidos');
+                        document.getElementById('acompanantesSection').style.display = 'none';
+                    }
+                    
+                    // Cambiar al paso 2
+                    cambiarPaso(2);
+                } else {
+                    if (data.yaConfirmado) {
+                        mostrarAlerta('Este código ya ha sido utilizado para confirmar asistencia', 'info');
+                    } else {
+                        mostrarAlerta(data.message || 'Código de invitación no válido', 'danger');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarAlerta('Error al validar el código. Inténtalo de nuevo.', 'danger');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-search me-2"></i>Validar Código';
+            }
+        });
+
+        // Confirmar asistencia
+        document.getElementById('confirmacionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const button = e.target.querySelector('button[type="submit"]');
+            const codigo = document.getElementById('codigoValidado').value;
+            
+            const datos = {
+                nombre: document.getElementById('nombre').value.trim(),
+                correo: document.getElementById('correo').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                cargo: document.getElementById('cargo').value.trim(),
+                empresa: document.getElementById('empresa').value.trim(),
+                direccion: document.getElementById('direccion').value.trim(),
+                sector: document.querySelector('input[name="sector"]:checked')?.value || '',
+                acompanantes: acompanantes.filter(acompanante => acompanante.nombre.trim() !== '')
+            };
+            
+            // Validaciones básicas
+            if (!datos.nombre || !datos.correo) {
+                mostrarAlerta('Nombre y correo son campos obligatorios', 'warning');
+                return;
+            }
+
+            if (!document.getElementById('aceptoTerminos').checked) {
+                mostrarAlerta('Debes aceptar los Términos y Condiciones', 'warning');
+                return;
+            }
+            
+            button.disabled = true;
+            button.querySelector('.btn-text').style.display = 'none';
+            button.querySelector('.loading-spinner').style.display = 'inline-block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/invitaciones/confirmar/${codigo}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Mostrar datos de confirmación
+                    document.getElementById('confirmacionNombre').textContent = data.confirmacion.nombre;
+                    document.getElementById('confirmacionEvento').textContent = data.evento.nombre_evento;
+                    document.getElementById('confirmacionFecha').textContent = new Date(data.evento.fecha).toLocaleDateString('es-ES');
+                    document.getElementById('confirmacionAcompanantes').textContent = data.confirmacion.acompanantes.length;
+                    
+                    // Cambiar al paso 3
+                    cambiarPaso(3);
+                } else {
+                    mostrarAlerta(data.message || 'Error al confirmar asistencia', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarAlerta('Error al confirmar asistencia. Inténtalo de nuevo.', 'danger');
+            } finally {
+                button.disabled = false;
+                button.querySelector('.btn-text').style.display = 'inline';
+                button.querySelector('.loading-spinner').style.display = 'none';
+            }
+        });
+
+        // Función para volver al paso 1
+        function volverPaso1() {
+            // Limpiar datos
+            acompanantes = [];
+            maxAcompanantes = 0;
+            datosEvento = null;
+            
+            // Limpiar formularios
+            document.getElementById('codigoForm').reset();
+            document.getElementById('confirmacionForm').reset();
+            document.getElementById('acompanantesList').innerHTML = '';
+            document.getElementById('acompanantesSection').style.display = 'none';
+            document.getElementById('eventInfo').style.display = 'none';
+            
+            // Volver al paso 1
+            cambiarPaso(1);
+        }
+
+        // Función para iniciar nueva confirmación
+        function iniciarNuevo() {
+            volverPaso1();
+        }
+
+        // Inicializar
+        cambiarPaso(1);
+    </script>
+</body>
+</html>

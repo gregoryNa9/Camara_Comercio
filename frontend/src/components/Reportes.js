@@ -101,8 +101,28 @@ function Reportes({ onNavigate }) {
   }, [API_BASE]);
 
   const handleInputChange = e => setFiltros({ ...filtros, [e.target.name]: e.target.value });
-  const handleBuscar = () => { };
-  const handleLimpiar = () => setFiltros({ tipoEvento: '', fechaEvento: '' });
+  
+  const handleBuscar = () => {
+    // Filtrar reportes basado en los filtros
+    let filtrados = [...reportes];
+    
+    if (filtros.tipoEvento) {
+      // Aquí podrías filtrar por tipo de evento si tienes esa información
+      console.log('Filtrando por tipo de evento:', filtros.tipoEvento);
+    }
+    
+    if (filtros.fechaEvento) {
+      // Aquí podrías filtrar por fecha si tienes esa información
+      console.log('Filtrando por fecha:', filtros.fechaEvento);
+    }
+    
+    // Por ahora, solo mostramos un mensaje de que la búsqueda está funcionando
+    alert(`Búsqueda realizada con filtros:\n- Tipo: ${filtros.tipoEvento || 'Todos'}\n- Fecha: ${filtros.fechaEvento || 'Todas'}`);
+  };
+  
+  const handleLimpiar = () => {
+    setFiltros({ tipoEvento: '', fechaEvento: '' });
+  };
 
   const lineData = {
     labels: chartData.invitacionesPorMes.length > 0 

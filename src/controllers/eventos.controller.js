@@ -2,6 +2,7 @@ const Evento = require("../models/Eventos");
 const Confirmacion = require("../models/Confirmacion");
 const Invitacion = require("../models/Invitacion");
 const Usuario = require("../models/Usuario");
+const Acompanante = require("../models/Acompanante");
 const exportExcel = require("../utils/exportExcel");
 
 // Obtener todos los eventos
@@ -134,7 +135,7 @@ exports.exportConfirmados = async (req, res) => {
             return res.status(404).json({ message: "Evento no encontrado" });
         }
 
-        // Obtener confirmaciones del evento con datos del usuario
+        // Obtener confirmaciones del evento (principales y acompañantes)
         const confirmaciones = await Confirmacion.findAll({
             include: [
                 {
@@ -148,7 +149,7 @@ exports.exportConfirmados = async (req, res) => {
                             attributes: ['cedula', 'nombre', 'correo', 'telefono', 'empresa', 'cargo']
                         }
                     ],
-                    attributes: []
+                    attributes: ['codigo_unico', 'qr_url', 'numero_acompanantes']
                 }
             ],
             attributes: [
@@ -158,22 +159,42 @@ exports.exportConfirmados = async (req, res) => {
                 'telefono',
                 'cargo',
                 'direccion',
-                'fecha_confirmacion'
+                'fecha_confirmacion',
+                'es_acompanante',
+                'tipo_participante',
+                'codigo_participante',
+                'qr_participante',
+                'id_confirmacion_padre'
+            ],
+            order: [
+                ['id_confirmacion_padre', 'ASC'],
+                ['id_confirmacion', 'ASC']
             ]
         });
 
-        // Preparar datos para Excel
-        const datosExcel = confirmaciones.map(conf => ({
-            'ID Confirmación': conf.id_confirmacion,
-            'Cédula': conf.Invitacion?.Usuario?.cedula || '',
-            'Nombre': conf.nombre || conf.Invitacion?.Usuario?.nombre || '',
-            'Correo': conf.correo || conf.Invitacion?.Usuario?.correo || '',
-            'Teléfono': conf.telefono || conf.Invitacion?.Usuario?.telefono || '',
-            'Empresa': conf.Invitacion?.Usuario?.empresa || '',
-            'Cargo': conf.cargo || conf.Invitacion?.Usuario?.cargo || '',
-            'Dirección': conf.direccion || '',
-            'Fecha Confirmación': conf.fecha_confirmacion ? new Date(conf.fecha_confirmacion).toLocaleDateString('es-ES') : ''
-        }));
+        // Preparar datos para Excel - cada confirmación es una fila
+        const datosExcel = confirmaciones.map(conf => {
+            const esAcompanante = conf.es_acompanante || false;
+            const tipoParticipante = conf.tipo_participante || (esAcompanante ? 'Acompañante' : 'Principal');
+            
+            return {
+                'ID Confirmación': conf.id_confirmacion,
+                'Tipo': tipoParticipante,
+                'Cédula': conf.Invitacion?.Usuario?.cedula || '',
+                'Nombre': conf.nombre || conf.Invitacion?.Usuario?.nombre || '',
+                'Correo': conf.correo || conf.Invitacion?.Usuario?.correo || '',
+                'Teléfono': conf.telefono || conf.Invitacion?.Usuario?.telefono || '',
+                'Empresa': conf.Invitacion?.Usuario?.empresa || '',
+                'Cargo': conf.cargo || conf.Invitacion?.Usuario?.cargo || '',
+                'Dirección': conf.direccion || '',
+                'Código Principal': conf.Invitacion?.codigo_unico || '',
+                'Código Participante': conf.codigo_participante || conf.Invitacion?.codigo_unico || '',
+                'Ruta QR Principal': conf.Invitacion?.qr_url || '',
+                'Ruta QR Participante': conf.qr_participante || conf.Invitacion?.qr_url || '',
+                'ID Confirmación Padre': conf.id_confirmacion_padre || '',
+                'Fecha Confirmación': conf.fecha_confirmacion ? new Date(conf.fecha_confirmacion).toLocaleDateString('es-ES') : ''
+            };
+        });
 
         // Generar Excel
         const buffer = await exportExcel(datosExcel, `Confirmados_${evento.nombre_evento.replace(/[^a-zA-Z0-9]/g, '_')}`);

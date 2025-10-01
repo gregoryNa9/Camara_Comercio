@@ -4,6 +4,7 @@ const fs = require("fs");
 const Invitacion = require("../models/Invitacion");
 const Usuario = require("../models/Usuario");
 const Evento = require("../models/Eventos");
+const EstadoInvitacion = require("../models/EstadoInvitacion");
 const generateQR = require("../utils/generateQR"); // debe devolver { qrDataURL, filePath } o similar
 const emailService = require("../services/emailService");
 const whatsappService = require("../services/whatsappService");
@@ -48,7 +49,9 @@ exports.getAll = async (req, res) => {
             imagen: invitacion.imagen,
             fecha_envio: invitacion.fecha_envio,
             id_estado: invitacion.id_estado,
-            id_metodo_envio: invitacion.id_metodo_envio
+            estado_invitacion: invitacion.EstadoInvitacion?.nombre_estado || 'Sin estado',
+            id_metodo_envio: invitacion.id_metodo_envio,
+            numero_acompanantes: invitacion.numero_acompanantes || 0
         }));
         
         res.json(invitacionesMapeadas);
@@ -79,6 +82,7 @@ exports.create = async (req, res) => {
             id_evento,
             id_metodo_envio = 3,
             id_estado = 1,
+            numero_acompanantes = 0,
         } = req.body;
 
         if (!cedula || !id_evento) {
@@ -173,6 +177,7 @@ exports.create = async (req, res) => {
             fecha_envio: new Date(),
             id_estado,
             id_metodo_envio,
+            numero_acompanantes: parseInt(numero_acompanantes) || 0,
         });
 
         // Preparar datos para los servicios de envío
@@ -182,6 +187,7 @@ exports.create = async (req, res) => {
             fecha_evento: evento.fecha,
             lugar_evento: evento.lugar,
             codigo_unico: codigo_unico,
+            numero_acompanantes: parseInt(numero_acompanantes) || 0,
             qr_image: qrDataURL,
             confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${codigo_unico}`,
             unsubscribe_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/unsubscribe/${codigo_unico}`,
@@ -297,6 +303,11 @@ exports.getByUsuario = async (req, res) => {
                     model: Evento,
                     as: 'Evento',
                     attributes: ['id_evento', 'nombre_evento', 'categoria', 'fecha', 'lugar']
+                },
+                {
+                    model: EstadoInvitacion,
+                    as: 'EstadoInvitacion',
+                    attributes: ['id_estado', 'nombre_estado']
                 }
             ]
         });
@@ -320,7 +331,9 @@ exports.getByUsuario = async (req, res) => {
             imagen: invitacion.imagen,
             fecha_envio: invitacion.fecha_envio,
             id_estado: invitacion.id_estado,
-            id_metodo_envio: invitacion.id_metodo_envio
+            estado_invitacion: invitacion.EstadoInvitacion?.nombre_estado || 'Sin estado',
+            id_metodo_envio: invitacion.id_metodo_envio,
+            numero_acompanantes: invitacion.numero_acompanantes || 0
         }));
         
         res.json(invitacionesMapeadas);
@@ -386,7 +399,7 @@ exports.enviarFormularioBrevo = async (req, res) => {
                     fecha_evento: invitacion.Evento.fecha,
                     lugar_evento: invitacion.Evento.lugar,
                     codigo_unico: invitacion.codigo_unico,
-                    formulario_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/formulario/${invitacion.codigo_unico}`
+                    formulario_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/formulario-publico/?codigo=${invitacion.codigo_unico}`
                 };
 
                 const resultadoEnvio = {
@@ -449,6 +462,251 @@ exports.enviarFormularioBrevo = async (req, res) => {
 
     } catch (error) {
         console.error("Error en enviarFormularioBrevo:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error interno del servidor",
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * GET /api/invitaciones/validar-codigo/:codigo
+ * Validar código de invitación y obtener datos del evento
+ */
+exports.validarCodigo = async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        
+        if (!codigo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Código de invitación requerido" 
+            });
+        }
+
+        // Buscar invitación por código único
+        const invitacion = await Invitacion.findOne({
+            where: { codigo_unico: codigo },
+            include: [
+                { 
+                    model: Evento, 
+                    as: 'Evento',
+                    attributes: ['id_evento', 'nombre_evento', 'categoria', 'fecha', 'lugar', 'hora_inicio', 'hora_fin']
+                }
+            ]
+        });
+
+        if (!invitacion) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Código de invitación no válido o no encontrado" 
+            });
+        }
+
+        // Verificar si ya existe confirmación para esta invitación
+        const Confirmacion = require("../models/Confirmacion");
+        const confirmacionExistente = await Confirmacion.findOne({
+            where: { id_invitacion: invitacion.id_invitacion }
+        });
+
+        if (confirmacionExistente) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Ya existe una confirmación para esta invitación",
+                yaConfirmado: true
+            });
+        }
+
+        // Devolver datos del evento para el formulario
+                res.json({
+                    success: true,
+                    message: "Código válido",
+                    invitacion: {
+                        id_invitacion: invitacion.id_invitacion,
+                        codigo_unico: invitacion.codigo_unico,
+                        numero_acompanantes: invitacion.numero_acompanantes || 0,
+                        evento: {
+                            id_evento: invitacion.Evento.id_evento,
+                            nombre_evento: invitacion.Evento.nombre_evento,
+                            categoria: invitacion.Evento.categoria,
+                            fecha: invitacion.Evento.fecha,
+                            lugar: invitacion.Evento.lugar,
+                            hora_inicio: invitacion.Evento.hora_inicio,
+                            hora_fin: invitacion.Evento.hora_fin
+                        }
+                    }
+                });
+
+    } catch (error) {
+        console.error("Error en validarCodigo:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error interno del servidor",
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * POST /api/invitaciones/confirmar/:codigo
+ * Crear confirmación usando código de invitación
+ */
+exports.confirmarInvitacion = async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        const { nombre, correo, telefono, cargo, direccion, acompanantes = [] } = req.body;
+        
+        if (!codigo || !nombre || !correo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Código, nombre y correo son requeridos" 
+            });
+        }
+
+        // Buscar invitación por código único
+        const invitacion = await Invitacion.findOne({
+            where: { codigo_unico: codigo },
+            include: [{ model: Evento, as: 'Evento' }]
+        });
+
+        if (!invitacion) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Código de invitación no válido" 
+            });
+        }
+
+        // Verificar si ya existe confirmación
+        const Confirmacion = require("../models/Confirmacion");
+        const confirmacionExistente = await Confirmacion.findOne({
+            where: { id_invitacion: invitacion.id_invitacion }
+        });
+
+        if (confirmacionExistente) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Ya existe una confirmación para esta invitación" 
+            });
+        }
+
+        // Crear confirmación
+        const confirmacion = await Confirmacion.create({
+            id_invitacion: invitacion.id_invitacion,
+            nombre,
+            correo,
+            telefono: telefono || null,
+            cargo: cargo || null,
+            direccion: direccion || null,
+            fecha_confirmacion: new Date()
+        });
+
+        // Actualizar estado de la invitación
+        await invitacion.update({
+            id_estado: 4 // Estado: Confirmado
+        });
+
+        // Crear confirmaciones para acompañantes si existen
+        if (acompanantes && acompanantes.length > 0) {
+            const generateAcompananteCodes = require("../utils/generateAcompananteCode");
+            
+            for (let i = 0; i < acompanantes.length; i++) {
+                const acompanante = acompanantes[i];
+                
+                // Generar códigos para el acompañante
+                const codes = await generateAcompananteCodes.generateAcompananteCodes(
+                    invitacion.codigo_unico, 
+                    i + 1
+                );
+                
+                // Crear confirmación para el acompañante
+                const confirmacionAcompanante = await Confirmacion.create({
+                    id_invitacion: invitacion.id_invitacion,
+                    nombre: acompanante.nombre,
+                    correo: acompanante.correo || '',
+                    telefono: acompanante.telefono || null,
+                    cargo: acompanante.cargo || null,
+                    direccion: null,
+                    fecha_confirmacion: new Date(),
+                    es_acompanante: true,
+                    id_usuario_principal: invitacion.id_usuario,
+                    tipo_participante: 'Acompañante',
+                    codigo_participante: codes.codigo_participante,
+                    qr_participante: codes.qr_participante,
+                    id_confirmacion_padre: confirmacion.id_confirmacion
+                });
+                
+                console.log(`✅ Acompañante ${i + 1} registrado con código: ${codes.codigo_participante}`);
+                
+                // Enviar email al acompañante si tiene correo
+                if (acompanante.correo) {
+                    try {
+                        const datosAcompanante = {
+                            nombre: acompanante.nombre,
+                            evento_nombre: invitacion.Evento.nombre_evento,
+                            fecha_evento: invitacion.Evento.fecha,
+                            lugar_evento: invitacion.Evento.lugar,
+                            codigo_unico: codes.codigo_participante,
+                            qr_url: codes.qr_participante,
+                            invitado_principal: nombre,
+                            confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${invitacion.codigo_unico}`
+                        };
+                        
+                        const emailAcompanante = await brevoService.sendCodigosAcompanante(acompanante.correo, datosAcompanante);
+                        if (emailAcompanante.success) {
+                            console.log(`✅ Email enviado a acompañante: ${acompanante.nombre} (${acompanante.correo})`);
+                        }
+                    } catch (emailError) {
+                        console.error(`❌ Error enviando email a acompañante ${acompanante.nombre}:`, emailError);
+                    }
+                }
+            }
+            
+            console.log(`✅ ${acompanantes.length} acompañantes registrados como confirmaciones`);
+        }
+
+        // Preparar datos para enviar códigos de confirmación
+        const datosInvitacion = {
+            nombre: nombre,
+            evento_nombre: invitacion.Evento.nombre_evento,
+            fecha_evento: invitacion.Evento.fecha,
+            lugar_evento: invitacion.Evento.lugar,
+            codigo_unico: invitacion.codigo_unico,
+            confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${invitacion.codigo_unico}`
+        };
+
+        // Enviar códigos de confirmación por email
+        let emailEnviado = false;
+        try {
+            const emailResult = await brevoService.sendCodigosInvitacion(correo, datosInvitacion);
+            emailEnviado = emailResult.success;
+            if (emailEnviado) {
+                console.log("✅ Códigos de confirmación enviados por email");
+            }
+        } catch (emailError) {
+            console.error("❌ Error enviando códigos por email:", emailError);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "Confirmación registrada exitosamente",
+            confirmacion: {
+                id_confirmacion: confirmacion.id_confirmacion,
+                nombre: confirmacion.nombre,
+                correo: confirmacion.correo,
+                fecha_confirmacion: confirmacion.fecha_confirmacion,
+                acompanantes: acompanantes || []
+            },
+            evento: {
+                nombre_evento: invitacion.Evento.nombre_evento,
+                fecha: invitacion.Evento.fecha,
+                lugar: invitacion.Evento.lugar
+            },
+            email_enviado: emailEnviado
+        });
+
+    } catch (error) {
+        console.error("Error en confirmarInvitacion:", error);
         res.status(500).json({ 
             success: false, 
             message: "Error interno del servidor",

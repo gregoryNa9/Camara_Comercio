@@ -145,7 +145,26 @@ function NewUser({ onNavigate }) {
 
   // Filtros
   const handleInputChange = (e) => { setFiltros({ ...filtros, [e.target.name]: e.target.value }); };
-  const handleBuscar = () => { console.log('Buscando usuarios:', filtros); };
+  const handleBuscar = () => {
+    // Filtrar usuarios basado en los filtros
+    let filtrados = [...usuarios];
+    
+    if (filtros.cedula) {
+      filtrados = filtrados.filter(usuario => 
+        usuario.cedula.toLowerCase().includes(filtros.cedula.toLowerCase())
+      );
+    }
+    
+    if (filtros.apellido) {
+      filtrados = filtrados.filter(usuario => 
+        usuario.nombre.toLowerCase().includes(filtros.apellido.toLowerCase())
+      );
+    }
+    
+    // Actualizar la lista de usuarios mostrados
+    setUsuarios(filtrados);
+    console.log('Usuarios filtrados:', filtrados.length);
+  };
   const handleLimpiar = () => { setFiltros({ cedula: '', apellido: '' }); };
 
   // Cargar usuarios al montar el componente

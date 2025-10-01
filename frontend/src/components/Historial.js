@@ -39,7 +39,7 @@ function Historial({ onNavigate, selectedUser }) {
         categoria: invitacion.categoria || 'Sin categoría',
         fecha: invitacion.fecha_evento ? new Date(invitacion.fecha_evento).toLocaleDateString('es-ES') : 'Sin fecha',
         lugar: invitacion.lugar || 'Sin lugar',
-        estado: invitacion.id_estado === 1 ? 'Pendiente' : invitacion.id_estado === 2 ? 'Confirmado' : 'Cancelado',
+        estado: invitacion.estado_invitacion || 'Sin estado',
         fechaEnvio: invitacion.fecha_envio ? new Date(invitacion.fecha_envio).toLocaleDateString('es-ES') : 'No enviado',
         codigoAlfanumerico: invitacion.codigo_unico || 'Sin código',
         qrUrl: invitacion.qr_url || null

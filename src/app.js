@@ -9,6 +9,7 @@ require("./models/Confirmacion");
 require("./models/MetodoEnvio");
 require("./models/EstadoInvitacion");
 require("./models/Eventos"); // 👈 Modelo de eventos
+require("./models/Acompanante"); // 👈 Modelo de acompañantes
 
 // 🔹 Cargar relaciones entre modelos
 require("./models/associations");
@@ -22,6 +23,7 @@ const metodosRoutes = require("./routes/metodos.routes");
 const estadosRoutes = require("./routes/estados.routes");
 const eventosRoutes = require("./routes/eventos.routes"); // 👈 Nombre correcto
 const reportesRoutes = require("./routes/reportes.routes"); // 👈 Rutas de reportes
+const acompanantesRoutes = require("./routes/acompanantes.routes"); // 👈 Rutas de acompañantes
 
 const app = express();
 app.use(cors());
@@ -29,6 +31,9 @@ app.use(express.json());
 
 // 🔹 Servir archivos estáticos desde el directorio temp (para códigos QR)
 app.use('/temp', express.static('src/temp'));
+
+// 🔹 Servir formulario público
+app.use('/formulario-publico', express.static('formulario-publico'));
 
 // 🔹 Prefijo para las rutas principales (buena práctica)
 app.use("/api/auth", authRoutes); // 👈 Rutas de autenticación
@@ -39,6 +44,7 @@ app.use("/api/metodos", metodosRoutes);
 app.use("/api/estados", estadosRoutes);
 app.use("/api/eventos", eventosRoutes); // 👈 Ruta funcionando
 app.use("/api/reportes", reportesRoutes); // 👈 Rutas de reportes
+app.use("/api/acompanantes", acompanantesRoutes); // 👈 Rutas de acompañantes
 
 // 🔹 Verificar conexión a la base de datos
 sequelize.authenticate()

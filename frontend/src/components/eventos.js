@@ -70,7 +70,24 @@ function Eventos({ onNavigate }) {
   };
 
   const handleBuscar = () => {
-    console.log("Buscar con filtros", filtros);
+    // Filtrar eventos basado en los filtros
+    let filtrados = [...eventos];
+    
+    if (filtros.categoria) {
+      filtrados = filtrados.filter(evento => 
+        evento.categoria.toLowerCase().includes(filtros.categoria.toLowerCase())
+      );
+    }
+    
+    if (filtros.fecha) {
+      filtrados = filtrados.filter(evento => 
+        evento.fecha === filtros.fecha
+      );
+    }
+    
+    // Actualizar la lista de eventos mostrados
+    setEventos(filtrados);
+    console.log("Eventos filtrados:", filtrados.length);
   };
 
   const handleLimpiar = () => {

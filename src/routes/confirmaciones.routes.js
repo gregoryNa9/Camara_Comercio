@@ -5,6 +5,7 @@ const confirmacionesController = require("../controllers/confirmaciones.controll
 
 // CRUD completo
 router.get("/", confirmacionesController.getAll);       // Obtener todos
+router.get("/exportar", confirmacionesController.exportarConfirmaciones); // Exportar Excel
 router.post("/", confirmacionesController.create);      // Crear
 router.put("/:id", confirmacionesController.update);    // Actualizar
 router.delete("/:id", confirmacionesController.delete); // Eliminar

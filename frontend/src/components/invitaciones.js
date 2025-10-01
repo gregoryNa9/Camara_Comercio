@@ -11,10 +11,13 @@ function Invitaciones({ onNavigate }) {
 	// Estados
 	const [filtros, setFiltros] = useState({ cedula: "", evento: "", apellidos: "" });
 	const [invitaciones, setInvitaciones] = useState([]);
+	const [invitacionesFiltradas, setInvitacionesFiltradas] = useState([]);
 	const [eventos, setEventos] = useState([]);
 	const [metodosEnvio, setMetodosEnvio] = useState({ whatsapp: false, correo: false });
+	const [numeroAcompanantes, setNumeroAcompanantes] = useState(0);
 	const [nuevaImagen, setNuevaImagen] = useState(null);
 	const [loading, setLoading] = useState(false);
+	const [buscandoUsuario, setBuscandoUsuario] = useState(false);
 	const [error, setError] = useState("");
 	const [usuarioEncontrado, setUsuarioEncontrado] = useState(null);
 
@@ -38,6 +41,7 @@ function Invitaciones({ onNavigate }) {
 			const data = await res.json();
 			console.log("📊 Datos recibidos:", data);
 			setInvitaciones(data);
+			setInvitacionesFiltradas(data); // Inicializar con todos los datos
 		} catch (err) {
 			console.error("❌ Error al cargar invitaciones:", err);
 			setError("No se pudo cargar las invitaciones.");
@@ -45,6 +49,37 @@ function Invitaciones({ onNavigate }) {
 			setLoading(false);
 		}
 	}, [API_BASE]);
+
+	// Función para eliminar invitación
+	const eliminarInvitacion = async (id) => {
+		try {
+			setLoading(true);
+			setError("");
+			console.log("🗑️ Eliminando invitación ID:", id);
+			
+			const res = await fetch(`${API_BASE}/invitaciones/${id}`, {
+				method: 'DELETE'
+			});
+			
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.message || "Error al eliminar invitación");
+			}
+			
+			console.log("✅ Invitación eliminada exitosamente");
+			
+			// Cerrar modal y recargar lista
+			setShowDeleteModal(false);
+			setInvitacionSeleccionada(null);
+			await fetchInvitaciones();
+			
+		} catch (err) {
+			console.error("❌ Error al eliminar invitación:", err);
+			setError("No se pudo eliminar la invitación: " + err.message);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const fetchEventos = useCallback(async () => {
 		try {
@@ -93,44 +128,98 @@ function Invitaciones({ onNavigate }) {
 		};
 	}, [fetchInvitaciones]);
 
+	// Función para filtrar invitaciones
+	const filtrarInvitaciones = () => {
+		let filtradas = [...invitaciones];
+		
+		// Filtrar por cédula
+		if (filtros.cedula.trim() !== "") {
+			filtradas = filtradas.filter(inv => 
+				inv.cedula.toLowerCase().includes(filtros.cedula.toLowerCase())
+			);
+		}
+		
+		// Filtrar por evento
+		if (filtros.evento.trim() !== "") {
+			filtradas = filtradas.filter(inv => 
+				inv.evento.toLowerCase().includes(filtros.evento.toLowerCase())
+			);
+		}
+		
+		// Filtrar por apellidos
+		if (filtros.apellidos.trim() !== "") {
+			filtradas = filtradas.filter(inv => 
+				inv.nombre.toLowerCase().includes(filtros.apellidos.toLowerCase())
+			);
+		}
+		
+		setInvitacionesFiltradas(filtradas);
+	};
+
+	// Función de búsqueda
+	const handleBuscar = () => {
+		filtrarInvitaciones();
+	};
+
+	// Función para limpiar filtros
+	const handleLimpiar = () => {
+		setFiltros({ cedula: "", evento: "", apellidos: "" });
+		setInvitacionesFiltradas(invitaciones); // Mostrar todas las invitaciones
+		setUsuarioEncontrado(null);
+		setBuscandoUsuario(false);
+		setNumeroAcompanantes(0);
+		setMetodosEnvio({ whatsapp: false, correo: false });
+		setNuevaImagen(null);
+		setError("");
+	};
+
 	// Filtros
 	const handleChangeFiltro = (e) => {
 		const { name, value } = e.target;
+		console.log("🔄 Cambio en filtro:", name, "=", value);
 		setFiltros((prev) => ({ ...prev, [name]: value }));
-		if (name === "cedula" && value.trim() !== "") buscarUsuario(value);
+		if (name === "cedula" && value.trim() !== "") {
+			console.log("🔍 Ejecutando búsqueda de usuario...");
+			buscarUsuario(value);
+		}
 	};
 
 	const buscarUsuario = async (cedula) => {
 		try {
+			setBuscandoUsuario(true);
+			console.log("🔍 Buscando usuario con cédula:", cedula);
 			const res = await fetch(`${API_BASE}/usuarios/cedula/${cedula}`);
+			console.log("📡 Respuesta del servidor:", res.status, res.statusText);
+			
 			if (res.ok) {
 				const usuario = await res.json();
+				console.log("👤 Usuario encontrado:", usuario);
 				setUsuarioEncontrado(usuario);
+				
 				// Extraer apellido del nombre completo
 				const nombreCompleto = usuario.nombre || "";
 				const partes = nombreCompleto.split(" ");
 				const apellido = partes.length > 1 ? partes[partes.length - 1] : "";
+				console.log("📝 Apellido extraído:", apellido);
 				
 				setFiltros((prev) => ({
 					...prev,
 					apellidos: apellido,
 				}));
 			} else {
+				console.log("❌ Usuario no encontrado");
 				setUsuarioEncontrado(null);
 				setFiltros((prev) => ({ ...prev, apellidos: "" }));
 			}
-		} catch {
+		} catch (error) {
+			console.error("❌ Error al buscar usuario:", error);
 			setUsuarioEncontrado(null);
 			setFiltros((prev) => ({ ...prev, apellidos: "" }));
+		} finally {
+			setBuscandoUsuario(false);
 		}
 	};
 
-	const handleLimpiar = () => {
-		setFiltros({ cedula: "", evento: "", apellidos: "" });
-		setMetodosEnvio({ whatsapp: false, correo: false });
-		setNuevaImagen(null);
-		setUsuarioEncontrado(null);
-	};
 
 	// Validaciones robustas
 	const validarCedula = (cedula) => {
@@ -223,6 +312,7 @@ function Invitaciones({ onNavigate }) {
 			
 			formData.append("id_metodo_envio", id_metodo_envio);
 			formData.append("id_estado", 1); // Estado pendiente
+			formData.append("numero_acompanantes", numeroAcompanantes);
 			
 			if (nuevaImagen) {
 				formData.append("imagen", nuevaImagen);
@@ -329,14 +419,23 @@ function Invitaciones({ onNavigate }) {
 							</div>
 							<div className="col-md-4">
 								<label className="form-label">Apellidos</label>
-								<input
-									type="text"
-									name="apellidos"
-									value={filtros.apellidos}
-									readOnly
-									className="form-control"
-									placeholder="Se autocompleta al ingresar la cédula"
-								/>
+								<div className="input-group">
+									<input
+										type="text"
+										name="apellidos"
+										value={filtros.apellidos}
+										readOnly
+										className="form-control"
+										placeholder="Se autocompleta al ingresar la cédula"
+									/>
+									{buscandoUsuario && (
+										<span className="input-group-text">
+											<span className="spinner-border spinner-border-sm" role="status">
+												<span className="visually-hidden">Buscando...</span>
+											</span>
+										</span>
+									)}
+								</div>
 							</div>
 							<div className="col-md-4">
 								<label className="form-label">Evento</label>
@@ -353,6 +452,30 @@ function Invitaciones({ onNavigate }) {
 										</option>
 									))}
 								</select>
+							</div>
+						</div>
+
+						{/* Botones de búsqueda y limpiar */}
+						<div className="row mt-3">
+							<div className="col-12 col-md-6 col-lg-3">
+								<button 
+									className="btn btn-primary w-100" 
+									onClick={handleBuscar}
+									disabled={loading}
+								>
+									<i className="fa-solid fa-magnifying-glass me-2"></i>
+									{loading ? 'Buscando...' : 'Buscar'}
+								</button>
+							</div>
+							<div className="col-12 col-md-6 col-lg-3">
+								<button 
+									className="btn btn-outline-secondary w-100" 
+									onClick={handleLimpiar}
+									disabled={loading}
+								>
+									<i className="fa-solid fa-eraser me-2"></i>
+									Limpiar
+								</button>
 							</div>
 						</div>
 
@@ -468,6 +591,34 @@ function Invitaciones({ onNavigate }) {
 							</div>
 						</div>
 
+						{/* Campo de número de acompañantes */}
+						<div className="mt-3">
+							<label className="form-label">
+								<i className="fa-solid fa-users me-2"></i>
+								Número de Acompañantes
+							</label>
+							<div className="row">
+								<div className="col-md-6">
+									<input
+										type="number"
+										className="form-control"
+										min="0"
+										max="10"
+										value={numeroAcompanantes}
+										onChange={(e) => setNumeroAcompanantes(parseInt(e.target.value) || 0)}
+										disabled={loading}
+										placeholder="0"
+									/>
+								</div>
+								<div className="col-md-6">
+									<small className="text-muted">
+										<i className="fa-solid fa-info-circle me-1"></i>
+										Máximo 10 acompañantes por invitación
+									</small>
+								</div>
+							</div>
+						</div>
+
 						<div className="mt-3">
 							<label className="form-label">
 								<i className="fa-solid fa-image me-2"></i>
@@ -562,19 +713,20 @@ function Invitaciones({ onNavigate }) {
 											<th>Evento</th>
 											<th>Fecha Evento</th>
 											<th>Código Único</th>
+											<th>Acompañantes</th>
 											<th>Métodos</th>
 											<th>Acciones</th>
 										</tr>
 									</thead>
 									<tbody>
-										{invitaciones.length === 0 ? (
+										{invitacionesFiltradas.length === 0 ? (
 											<tr>
-												<td colSpan="8" className="text-center text-muted">
-													No hay invitaciones registradas
+												<td colSpan="9" className="text-center text-muted">
+													{invitaciones.length === 0 ? 'No hay invitaciones registradas' : 'No se encontraron invitaciones con los filtros aplicados'}
 												</td>
 											</tr>
 										) : (
-											invitaciones.map((inv) => (
+											invitacionesFiltradas.map((inv) => (
 												<tr key={inv.id_invitacion}>
 													<td>{inv.nombre}</td>
 													<td>{inv.cedula}</td>
@@ -583,6 +735,12 @@ function Invitaciones({ onNavigate }) {
 													<td>{inv.fecha_evento}</td>
 													<td>
 														<span className="badge bg-primary">{inv.codigo_unico}</span>
+													</td>
+													<td>
+														<span className="badge bg-info">
+															<i className="fa-solid fa-users me-1"></i>
+															{inv.numero_acompanantes || 0}
+														</span>
 													</td>
 													<td>
 														{inv.id_metodo_envio === 1 && <span className="badge bg-success">Correo</span>}
@@ -652,6 +810,12 @@ function Invitaciones({ onNavigate }) {
 											<p><strong>Código Único:</strong> 
 												<span className="badge bg-primary ms-2">{invitacionSeleccionada.codigo_unico}</span>
 											</p>
+											<p><strong>Acompañantes:</strong> 
+												<span className="badge bg-info ms-2">
+													<i className="fa-solid fa-users me-1"></i>
+													{invitacionSeleccionada.numero_acompanantes || 0}
+												</span>
+											</p>
 											<p><strong>Métodos de Envío:</strong>{" "}
 												{invitacionSeleccionada.id_metodo_envio === 1 && <span className="badge bg-success">Correo</span>}
 												{invitacionSeleccionada.id_metodo_envio === 2 && <span className="badge bg-success">WhatsApp</span>}
@@ -689,13 +853,26 @@ function Invitaciones({ onNavigate }) {
 						</Modal.Header>
 						<Modal.Body>
 							<p>¿Estás seguro de que deseas eliminar esta invitación?</p>
+							{invitacionSeleccionada && (
+								<div className="alert alert-warning">
+									<strong>Invitación a eliminar:</strong><br/>
+									<strong>Nombre:</strong> {invitacionSeleccionada.nombre}<br/>
+									<strong>Cédula:</strong> {invitacionSeleccionada.cedula}<br/>
+									<strong>Evento:</strong> {invitacionSeleccionada.evento}<br/>
+									<strong>Código:</strong> {invitacionSeleccionada.codigo_unico}
+								</div>
+							)}
 						</Modal.Body>
 						<Modal.Footer>
 							<Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
 								Cancelar
 							</Button>
-							<Button variant="danger">
-								Eliminar
+							<Button 
+								variant="danger" 
+								onClick={() => eliminarInvitacion(invitacionSeleccionada?.id_invitacion)}
+								disabled={loading}
+							>
+								{loading ? 'Eliminando...' : 'Eliminar'}
 							</Button>
 						</Modal.Footer>
 					</Modal>
