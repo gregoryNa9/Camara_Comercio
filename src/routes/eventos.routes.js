@@ -9,4 +9,7 @@ router.post("/", eventoController.create);       // Crear
 router.put("/:id", eventoController.update);     // Actualizar
 router.delete("/:id", eventoController.delete);  // Eliminar
 
+// Exportar confirmados en Excel
+router.get("/:id/exportar-confirmados", eventoController.exportConfirmados);
+
 module.exports = router;

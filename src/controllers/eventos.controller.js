@@ -1,4 +1,8 @@
 const Evento = require("../models/Eventos");
+const Confirmacion = require("../models/Confirmacion");
+const Invitacion = require("../models/Invitacion");
+const Usuario = require("../models/Usuario");
+const exportExcel = require("../utils/exportExcel");
 
 // Obtener todos los eventos
 exports.getAll = async (req, res) => {
@@ -116,5 +120,78 @@ exports.delete = async (req, res) => {
         res.json({ message: "Evento eliminado con éxito" });
     } catch (error) {
         res.status(400).json({ message: "Error al eliminar evento", error: error.message });
+    }
+};
+
+// Exportar confirmados de un evento en Excel
+exports.exportConfirmados = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Verificar que el evento existe
+        const evento = await Evento.findByPk(id);
+        if (!evento) {
+            return res.status(404).json({ message: "Evento no encontrado" });
+        }
+
+        // Obtener confirmaciones del evento con datos del usuario
+        const confirmaciones = await Confirmacion.findAll({
+            include: [
+                {
+                    model: Invitacion,
+                    as: 'Invitacion',
+                    where: { id_evento: id },
+                    include: [
+                        {
+                            model: Usuario,
+                            as: 'Usuario',
+                            attributes: ['cedula', 'nombre', 'correo', 'telefono', 'empresa', 'cargo']
+                        }
+                    ],
+                    attributes: []
+                }
+            ],
+            attributes: [
+                'id_confirmacion',
+                'nombre',
+                'correo',
+                'telefono',
+                'cargo',
+                'direccion',
+                'fecha_confirmacion'
+            ]
+        });
+
+        // Preparar datos para Excel
+        const datosExcel = confirmaciones.map(conf => ({
+            'ID Confirmación': conf.id_confirmacion,
+            'Cédula': conf.Invitacion?.Usuario?.cedula || '',
+            'Nombre': conf.nombre || conf.Invitacion?.Usuario?.nombre || '',
+            'Correo': conf.correo || conf.Invitacion?.Usuario?.correo || '',
+            'Teléfono': conf.telefono || conf.Invitacion?.Usuario?.telefono || '',
+            'Empresa': conf.Invitacion?.Usuario?.empresa || '',
+            'Cargo': conf.cargo || conf.Invitacion?.Usuario?.cargo || '',
+            'Dirección': conf.direccion || '',
+            'Fecha Confirmación': conf.fecha_confirmacion ? new Date(conf.fecha_confirmacion).toLocaleDateString('es-ES') : ''
+        }));
+
+        // Generar Excel
+        const buffer = await exportExcel(datosExcel, `Confirmados_${evento.nombre_evento.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        
+        if (!buffer) {
+            return res.status(404).json({ message: "No hay confirmaciones para exportar" });
+        }
+
+        // Configurar headers para descarga
+        const nombreArchivo = `Confirmados_${evento.nombre_evento.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+        res.setHeader('Content-Length', buffer.length);
+        
+        res.send(buffer);
+    } catch (error) {
+        console.error("Error al exportar confirmados:", error);
+        res.status(500).json({ message: "Error al exportar confirmados", error: error.message });
     }
 };

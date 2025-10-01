@@ -147,6 +147,54 @@ function Eventos({ onNavigate }) {
     }
   };
 
+  // Función para exportar confirmados en Excel
+  const exportarConfirmados = async (eventoId, nombreEvento) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/eventos/${eventoId}/exportar-confirmados`);
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          alert("No hay confirmaciones para exportar para este evento");
+          return;
+        }
+        throw new Error("Error al exportar confirmados");
+      }
+
+      // Obtener el blob del archivo Excel
+      const blob = await res.blob();
+      
+      // Crear URL temporal para descarga
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Obtener nombre del archivo desde el header Content-Disposition
+      const contentDisposition = res.headers.get('Content-Disposition');
+      let filename = `Confirmados_${nombreEvento.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log("✅ Archivo Excel descargado exitosamente");
+    } catch (error) {
+      console.error("❌ Error al exportar confirmados:", error);
+      alert("Error al exportar confirmados. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="d-flex min-vh-100">
       {/* Sidebar - siempre visible en desktop, desplegable en móvil */}
@@ -270,6 +318,14 @@ function Eventos({ onNavigate }) {
                             </button>
                             <button className="btn btn-link text-primary btn-action" title="Editar" onClick={() => handleEdit(evento)}>
                               <i className="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button 
+                              className="btn btn-link text-success btn-action" 
+                              title="Exportar Confirmados" 
+                              onClick={() => exportarConfirmados(evento.id, evento.nombreEvento)}
+                              disabled={loading}
+                            >
+                              <i className="fa-solid fa-file-excel"></i>
                             </button>
                             <button className="btn btn-link btn-action-danger" title="Eliminar" onClick={() => handleDelete(evento)}>
                               <i className="fa-solid fa-trash-can"></i>
