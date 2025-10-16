@@ -5,7 +5,7 @@ import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Invitaciones({ onNavigate }) {
-	const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080/api";
+	const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 	console.log("🌐 API_BASE configurado como:", API_BASE);
 
 	// Estados

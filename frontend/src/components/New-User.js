@@ -3,7 +3,7 @@ import './style.css';
 import Menu from './Menu';
 import { Modal, Button } from 'react-bootstrap';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 
 function NewUser({ onNavigate }) {
   // Sidebar desplegable

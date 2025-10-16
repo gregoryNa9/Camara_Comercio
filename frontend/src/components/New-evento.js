@@ -32,9 +32,10 @@ function NewEvento({ onNavigate }) {
     }));
   }, []);
 
+  const API_BASE = process.env.REACT_APP_API_BASE || '/api';
   const handleGuardar = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/eventos", {
+      const response = await fetch(`${API_BASE}/eventos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -55,7 +56,7 @@ function NewEvento({ onNavigate }) {
       console.error("❌ Error:", error);
       setMensaje("Error al guardar el evento ❌");
     }
-  }, [formData, onNavigate]);
+  }, [API_BASE, formData, onNavigate]);
 
   const handleLimpiar = useCallback(() => {
     setFormData({

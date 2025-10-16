@@ -10,11 +10,7 @@ const Usuario = sequelize.define("Usuario", {
     empresa: { type: DataTypes.STRING(100) },
     cargo: { type: DataTypes.STRING(100) },
     direccion: { type: DataTypes.STRING(150) },
-    // 🔹 Campos para autenticación
-    usuario: { type: DataTypes.STRING(50), allowNull: true, unique: true },
-    password: { type: DataTypes.STRING(255), allowNull: true },
-    rol: { type: DataTypes.STRING(20), defaultValue: 'usuario' },
-    activo: { type: DataTypes.BOOLEAN, defaultValue: true },
+    
 }, { tableName: "usuarios", timestamps: false });
 
 module.exports = Usuario;

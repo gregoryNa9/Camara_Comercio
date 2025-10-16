@@ -3,7 +3,8 @@ import './style.css';
 import Menu from './Menu';
 
 function Historial({ onNavigate, selectedUser }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
+  const API_BASE = process.env.REACT_APP_API_BASE || '/api';
+  const PUBLIC_BASE = process.env.REACT_APP_PUBLIC_BASE || window.location.origin;
 
   // Estados
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -289,8 +290,8 @@ function Historial({ onNavigate, selectedUser }) {
               <div className="modal-body text-center">
                 <img 
                   src={selectedQR.qrUrl.includes('\\') || selectedQR.qrUrl.includes('/') 
-                    ? `http://localhost:8080/temp/${selectedQR.qrUrl.split(/[\\/]/).pop()}` 
-                    : `http://localhost:8080/temp/${selectedQR.qrUrl}`} 
+                    ? `${PUBLIC_BASE}/temp/${selectedQR.qrUrl.split(/[\\/]/).pop()}` 
+                    : `${PUBLIC_BASE}/temp/${selectedQR.qrUrl}`} 
                   alt={`QR para ${selectedQR.codigoAlfanumerico}`}
                   style={{ maxWidth: '300px', maxHeight: '300px' }}
                   className="img-fluid"

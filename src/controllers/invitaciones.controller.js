@@ -672,6 +672,7 @@ exports.confirmarInvitacion = async (req, res) => {
             fecha_evento: invitacion.Evento.fecha,
             lugar_evento: invitacion.Evento.lugar,
             codigo_unico: invitacion.codigo_unico,
+            qr_url: invitacion.qr_url,
             confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${invitacion.codigo_unico}`
         };
 
@@ -761,6 +762,7 @@ exports.enviarCodigosBrevo = async (req, res) => {
                     fecha_evento: invitacion.Evento.fecha,
                     lugar_evento: invitacion.Evento.lugar,
                     codigo_unico: invitacion.codigo_unico,
+                    qr_url: invitacion.qr_url,
                     qr_image: qrResult.qrDataURL, // Base64 para adjunto
                     confirmacion_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmar/${invitacion.codigo_unico}`
                 };

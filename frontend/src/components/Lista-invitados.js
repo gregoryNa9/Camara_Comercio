@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './style.css';
 import Menu from './Menu';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 
 function ListaInvitados({ onNavigate }) {
   const [menuAbierto, setMenuAbierto] = useState(false);

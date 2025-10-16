@@ -1,6 +1,12 @@
-const Usuario = require("../models/Usuario");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
+// Credenciales fijas para el sistema
+const ADMIN_CREDENTIALS = {
+    usuario: "admin",
+    password: "admin123",
+    nombre: "Administrador",
+    rol: "admin"
+};
 
 // Login de usuario
 exports.login = async (req, res) => {
@@ -15,54 +21,37 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Buscar usuario en la base de datos
-        const user = await Usuario.findOne({ 
-            where: { 
-                usuario: usuario 
-            } 
-        });
+        // Verificación simple con if
+        if (usuario === ADMIN_CREDENTIALS.usuario && password === ADMIN_CREDENTIALS.password) {
+            // Generar token JWT
+            const token = jwt.sign(
+                { 
+                    id: 1, 
+                    usuario: ADMIN_CREDENTIALS.usuario,
+                    rol: ADMIN_CREDENTIALS.rol
+                },
+                process.env.JWT_SECRET || 'clave_secreta_por_defecto',
+                { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+            );
 
-        if (!user) {
+            // Respuesta exitosa
+            res.json({
+                success: true,
+                message: "Login exitoso",
+                token: token,
+                user: {
+                    id: 1,
+                    usuario: ADMIN_CREDENTIALS.usuario,
+                    nombre: ADMIN_CREDENTIALS.nombre,
+                    rol: ADMIN_CREDENTIALS.rol
+                }
+            });
+        } else {
             return res.status(401).json({ 
                 success: false, 
                 message: "Credenciales incorrectas" 
             });
         }
-
-        // Verificar contraseña (comparación directa para contraseñas en texto plano)
-        const passwordMatch = password === user.password;
-        
-        if (!passwordMatch) {
-            return res.status(401).json({ 
-                success: false, 
-                message: "Credenciales incorrectas" 
-            });
-        }
-
-        // Generar token JWT
-        const token = jwt.sign(
-            { 
-                id: user.id_usuario, 
-                usuario: user.usuario,
-                rol: user.rol || 'usuario'
-            },
-            process.env.JWT_SECRET || 'clave_secreta_por_defecto',
-            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-        );
-
-        // Respuesta exitosa
-        res.json({
-            success: true,
-            message: "Login exitoso",
-            token: token,
-            user: {
-                id: user.id_usuario,
-                usuario: user.usuario,
-                nombre: user.nombre,
-                apellido: user.apellido,
-                rol: user.rol || 'usuario'
-            }
-        });
 
     } catch (error) {
         console.error("Error en login:", error);

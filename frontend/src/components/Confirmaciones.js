@@ -5,7 +5,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Table, Spinner } from "react-bootstrap";
 
 function Confirmaciones({ onNavigate }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080/api";
+  const API_BASE = process.env.REACT_APP_API_BASE || "/api";
+  const PUBLIC_BASE = process.env.REACT_APP_PUBLIC_BASE || window.location.origin;
 
   const [confirmaciones, setConfirmaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -271,7 +272,7 @@ function Confirmaciones({ onNavigate }) {
                 <div className="mt-4 text-center">
                   <h6 className="text-primary mb-3">Código QR</h6>
                   <img 
-                    src={`http://localhost:8080${selected.qr_participante || selected.qr_url}`} 
+                    src={`${PUBLIC_BASE}${selected.qr_participante || selected.qr_url}`} 
                     alt="QR Code" 
                     style={{ width: "150px", height: "150px" }}
                     className="img-thumbnail"
@@ -300,7 +301,7 @@ function Confirmaciones({ onNavigate }) {
               <p><b>Código:</b> <code className="text-primary">{qrData.codigo}</code></p>
               <div className="mt-3">
                 <img 
-                  src={`http://localhost:8080${qrData.qrUrl}`} 
+                  src={`${PUBLIC_BASE}${qrData.qrUrl}`} 
                   alt="QR Code" 
                   style={{ width: "200px", height: "200px" }}
                   className="img-thumbnail"

@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const sequelize = require("./config/database");
 
 // 🔹 Importar modelos para que Sequelize los registre
@@ -35,6 +36,9 @@ app.use('/temp', express.static('src/temp'));
 // 🔹 Servir formulario público
 app.use('/formulario-publico', express.static('formulario-publico'));
 
+// 🔹 Servir el frontend compilado (React)
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
 // 🔹 Prefijo para las rutas principales (buena práctica)
 app.use("/api/auth", authRoutes); // 👈 Rutas de autenticación
 app.use("/api/usuarios", usuariosRoutes);
@@ -45,6 +49,14 @@ app.use("/api/estados", estadosRoutes);
 app.use("/api/eventos", eventosRoutes); // 👈 Ruta funcionando
 app.use("/api/reportes", reportesRoutes); // 👈 Rutas de reportes
 app.use("/api/acompanantes", acompanantesRoutes); // 👈 Rutas de acompañantes
+
+// 🔹 Catch-all para SPA: devolver index.html para rutas no API
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/temp') || req.path.startsWith('/formulario-publico')) {
+        return next();
+    }
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // 🔹 Verificar conexión a la base de datos
 sequelize.authenticate()

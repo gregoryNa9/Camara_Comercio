@@ -29,7 +29,7 @@ copy env.example .env
 BREVO_API_KEY=tu_api_key_de_brevo_aqui
 
 # Configuración del remitente
-BREVO_SENDER_NAME=Cámara de Comercio
+BREVO_SENDER_NAME=Cámara de Industrias y Producciones de Santo Domingo
 BREVO_SENDER_EMAIL=noreply@camaracomercio.com
 
 # Para usar Brevo como proveedor por defecto
@@ -75,7 +75,7 @@ EMAIL_PROVIDER=brevo
 - ✅ **Variables dinámicas**: `{{nombre}}`, `{{evento}}`, etc.
 - ✅ **Código QR adjunto** automáticamente
 - ✅ **Botones de acción** (confirmar asistencia)
-- ✅ **Estilo profesional** con colores de la Cámara de Comercio
+- ✅ **Estilo profesional** con colores institucionales
 
 ### **Variables Disponibles:**
 - `{{nombre}}` - Nombre del invitado

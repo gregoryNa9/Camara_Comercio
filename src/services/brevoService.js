@@ -1,5 +1,7 @@
 const axios = require('axios');
 const integrations = require('../config/integrations');
+const fs = require('fs');
+const path = require('path');
 
 class BrevoService {
     constructor() {
@@ -15,6 +17,31 @@ class BrevoService {
     }
 
     /**
+     * Lee un archivo QR y lo convierte a base64
+     * @param {string} qrPath - Ruta del archivo QR
+     * @returns {string|null} Base64 del archivo o null si no existe
+     */
+    readQRAsBase64(qrPath) {
+        try {
+            if (!qrPath) return null;
+            
+            // Convertir ruta relativa a absoluta
+            const fullPath = path.resolve(__dirname, '..', qrPath.replace(/^\//, ''));
+            
+            if (fs.existsSync(fullPath)) {
+                const fileBuffer = fs.readFileSync(fullPath);
+                return fileBuffer.toString('base64');
+            } else {
+                console.warn(`QR file not found: ${fullPath}`);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error reading QR file:', error);
+            return null;
+        }
+    }
+
+    /**
      * ETAPA 1: Enviar formulario de registro/confirmación
      */
     async sendFormularioRegistro(destinatario, datosInvitacion) {
@@ -23,8 +50,8 @@ class BrevoService {
             
             const emailData = {
                 sender: {
-                    name: process.env.BREVO_SENDER_NAME || "Cámara de Comercio",
-                    email: process.env.BREVO_SENDER_EMAIL || "noreply@camaracomercio.com"
+                    name: process.env.BREVO_SENDER_NAME || "Cámara de Industrias y Producciones de Santo Domingo",
+                    email: process.env.BREVO_SENDER_EMAIL || "info.industriassd@gmail.com"
                 },
                 to: [{
                     email: destinatario,
@@ -55,8 +82,8 @@ class BrevoService {
             
             const emailData = {
                 sender: {
-                    name: process.env.BREVO_SENDER_NAME || "Cámara de Comercio",
-                    email: process.env.BREVO_SENDER_EMAIL || "noreply@camaracomercio.com"
+                    name: process.env.BREVO_SENDER_NAME || "Cámara de Industrias y Producciones de Santo Domingo",
+                    email: process.env.BREVO_SENDER_EMAIL || "info.industriassd@gmail.com"
                 },
                 to: [{
                     email: destinatario,
@@ -66,13 +93,16 @@ class BrevoService {
                 htmlContent: template.html
             };
 
-            // Agregar imagen QR como adjunto si existe
-            if (datosInvitacion.qr_image) {
-                emailData.attachment = [{
-                    content: datosInvitacion.qr_image, // Base64 de la imagen
-                    name: "codigo_qr.png",
-                    type: "image/png"
-                }];
+            // Agregar QR como adjunto si existe
+            if (datosInvitacion.qr_url) {
+                const qrBase64 = this.readQRAsBase64(datosInvitacion.qr_url);
+                if (qrBase64) {
+                    emailData.attachment = [{
+                        content: qrBase64,
+                        name: `QR_${datosInvitacion.codigo_unico}.png`,
+                        type: "image/png"
+                    }];
+                }
             }
 
             const response = await axios.post(`${this.baseUrl}/smtp/email`, emailData, {
@@ -211,12 +241,12 @@ class BrevoService {
 
                     <div class="highlight">
                         <p><strong>📱 También puedes acceder desde WhatsApp:</strong></p>
-                        <p>Envía "FORMULARIO" al número de WhatsApp de la Cámara de Comercio</p>
+                        <p>Envía "FORMULARIO" al número de WhatsApp de la Cámara de Industrias y Producciones de Santo Domingo</p>
                     </div>
                 </div>
                 <div class="footer">
                     <p>Una vez completado el formulario, recibirás tu código de acceso</p>
-                    <p>Este es un mensaje automático de la Cámara de Comercio</p>
+                    <p>Este es un mensaje automático de la Cámara de Industrias y Producciones de Santo Domingo</p>
                 </div>
             </div>
         </body>
@@ -282,12 +312,6 @@ class BrevoService {
                     background-color: white;
                     border-radius: 8px;
                 }
-                .qr-code {
-                    max-width: 200px;
-                    height: auto;
-                    border: 2px solid #28a745;
-                    border-radius: 8px;
-                }
                 .code-highlight {
                     background-color: #f8f9fa;
                     padding: 15px;
@@ -316,6 +340,13 @@ class BrevoService {
                     margin: 10px 0;
                     font-weight: bold;
                 }
+                .attachment-info {
+                    background-color: #e7f3ff;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    border-left: 4px solid #007bff;
+                }
             </style>
         </head>
         <body>
@@ -342,17 +373,22 @@ class BrevoService {
                         <h3>🎫 Tu Código de Acceso</h3>
                         <div class="code-highlight">${datosInvitacion.codigo_unico}</div>
                         
-                        <p><strong>Presenta el siguiente código QR en la entrada:</strong></p>
-                        <img src="cid:codigo_qr.png" alt="Código QR" class="qr-code">
+                        <div class="attachment-info">
+                            <h4>📎 Código QR Adjunto</h4>
+                            <p>📱 <strong>Tu código QR está adjunto a este email</strong></p>
+                            <p>• Busca el archivo: <code>QR_${datosInvitacion.codigo_unico}.png</code></p>
+                            <p>• Descárgalo y guárdalo en tu teléfono</p>
+                            <p>• Preséntalo en la entrada del evento</p>
+                        </div>
                         
                         <p><em>También puedes mostrar el código alfanumérico si no tienes el QR</em></p>
                     </div>
 
-                    <div style="background-color: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
                         <h4>📋 Información Importante:</h4>
                         <ul>
                             <li>Llega 15 minutos antes del evento</li>
-                            <li>Presenta tu código QR o alfanumérico</li>
+                            <li>Presenta tu código QR (archivo adjunto) o alfanumérico</li>
                             <li>Trae una identificación oficial</li>
                             <li>Si tienes acompañantes, ellos también deben presentar sus códigos</li>
                         </ul>
@@ -360,7 +396,7 @@ class BrevoService {
                 </div>
                 <div class="footer">
                     <p>¡Esperamos verte en el evento!</p>
-                    <p>Cámara de Comercio - Sistema de Invitaciones</p>
+                    <p>Cámara de Industrias y Producciones de Santo Domingo - Sistema de Invitaciones</p>
                 </div>
             </div>
         </body>
@@ -538,8 +574,8 @@ Presenta este código en la entrada del evento.
             
             const emailData = {
                 sender: {
-                    name: process.env.BREVO_SENDER_NAME || "Cámara de Comercio",
-                    email: process.env.BREVO_SENDER_EMAIL || "noreply@camaracomercio.com"
+                    name: process.env.BREVO_SENDER_NAME || "Cámara de Industrias y Producciones de Santo Domingo",
+                    email: process.env.BREVO_SENDER_EMAIL || "info.industriassd@gmail.com"
                 },
                 to: [
                     {
@@ -551,6 +587,18 @@ Presenta este código en la entrada del evento.
                 htmlContent: template,
                 textContent: this.generateAcompananteTextTemplate(datosAcompanante)
             };
+
+            // Agregar QR como adjunto si existe
+            if (datosAcompanante.qr_url) {
+                const qrBase64 = this.readQRAsBase64(datosAcompanante.qr_url);
+                if (qrBase64) {
+                    emailData.attachment = [{
+                        content: qrBase64,
+                        name: `QR_${datosAcompanante.codigo_unico}.png`,
+                        type: "image/png"
+                    }];
+                }
+            }
 
             const response = await axios.post(`${this.baseUrl}/smtp/email`, emailData, {
                 headers: this.headers
@@ -597,10 +645,16 @@ Presenta este código en la entrada del evento.
                 .code-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #043474; }
                 .code { font-size: 24px; font-weight: bold; color: #043474; text-align: center; padding: 15px; background: #e8f4fd; border-radius: 5px; margin: 10px 0; }
                 .qr-section { text-align: center; margin: 20px 0; }
-                .qr-image { max-width: 200px; height: auto; border: 2px solid #043474; border-radius: 8px; }
                 .event-info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
                 .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
                 .highlight { color: #043474; font-weight: bold; }
+                .attachment-info {
+                    background-color: #e7f3ff;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    border-left: 4px solid #007bff;
+                }
             </style>
         </head>
         <body>
@@ -629,17 +683,19 @@ Presenta este código en la entrada del evento.
                         </p>
                     </div>
                     
-                    <div class="qr-section">
-                        <h3>📱 Código QR</h3>
-                        <img src="http://localhost:8080${datos.qr_url}" alt="Código QR" class="qr-image">
-                        <p>Presenta este código QR en la entrada del evento</p>
+                    <div class="attachment-info">
+                        <h4>📎 Código QR Adjunto</h4>
+                        <p>📱 <strong>Tu código QR está adjunto a este email</strong></p>
+                        <p>• Busca el archivo: <code>QR_${datos.codigo_unico}.png</code></p>
+                        <p>• Descárgalo y guárdalo en tu teléfono</p>
+                        <p>• Preséntalo en la entrada del evento</p>
                     </div>
                     
                     <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0;">
                         <h4>⚠️ Información Importante</h4>
                         <ul>
                             <li>Este código es personal e intransferible</li>
-                            <li>Debes presentar el código QR o alfanumérico en la entrada</li>
+                            <li>Debes presentar el código QR (archivo adjunto) o alfanumérico en la entrada</li>
                             <li>Tu acompañante principal es: <strong>${datos.invitado_principal}</strong></li>
                         </ul>
                     </div>
@@ -650,7 +706,7 @@ Presenta este código en la entrada del evento.
                 </div>
                 
                 <div class="footer">
-                    <p>Cámara de Comercio - Sistema de Gestión de Eventos</p>
+                    <p>Cámara de Industrias y Producciones de Santo Domingo - Sistema de Gestión de Eventos</p>
                     <p>Este es un mensaje automático, por favor no responder.</p>
                 </div>
             </div>
@@ -692,7 +748,7 @@ INFORMACIÓN IMPORTANTE:
 
 ¡Esperamos verte en el evento!
 
-Cámara de Comercio - Sistema de Gestión de Eventos
+Cámara de Industrias y Producciones de Santo Domingo - Sistema de Gestión de Eventos
         `;
     }
 }
